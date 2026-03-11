@@ -4,10 +4,10 @@
   "description": "SPECTER — The Illusive Security Protocol. Modular security skills for autonomous IDE agents.",
   "author": "Anvin (Illusive Operations)",
   "license": "MIT",
-  "homepage": "https://github.com/anvin/specter-kit",
+  "homepage": "https://github.com/AnvinX1/SPECTER-The-Illusive-Security-Protocol",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anvin/specter-kit.git"
+    "url": "git+https://github.com/AnvinX1/SPECTER-The-Illusive-Security-Protocol.git"
   },
   "scripts": {
     "postinstall": "node bin/postinstall.js"

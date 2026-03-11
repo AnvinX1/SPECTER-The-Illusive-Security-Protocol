@@ -17,7 +17,7 @@
 
 <br>
 
-[![npm](https://img.shields.io/npm/v/specter-kit?color=00e5ff&style=flat-square&label=specter-kit)](https://npmjs.com/package/specter-kit)
+[![GitHub](https://img.shields.io/github/v/tag/AnvinX1/SPECTER-The-Illusive-Security-Protocol?color=00e5ff&style=flat-square&label=version)](https://github.com/AnvinX1/SPECTER-The-Illusive-Security-Protocol)
 [![license](https://img.shields.io/badge/license-MIT-00e5ff?style=flat-square)](LICENSE)
 ![skills](https://img.shields.io/badge/skills-16-00e5ff?style=flat-square)
 ![refs](https://img.shields.io/badge/references-11-00e5ff?style=flat-square)
@@ -43,9 +43,12 @@ SPECTER is a zero-dependency, drop-in security skill system that turns any LLM-p
 ## ⚡ Quick Start
 
 ```bash
-npm install -g specter-kit     # install globally
-cd your-project                # enter any project
-specter init                   # activate SPECTER
+# Install globally from GitHub
+npm install -g AnvinX1/SPECTER-The-Illusive-Security-Protocol
+
+# Enter any project and activate
+cd your-project
+specter init
 ```
 
 Done. Your agent now operates under SPECTER governance.
@@ -260,21 +263,21 @@ Enforced automatically via `security-governance` — the first skill invoked in 
 ## 📦 All Installation Methods
 
 <details>
-<summary><strong>npm (recommended)</strong></summary>
+<summary><strong>npm — global install (recommended)</strong></summary>
 
 ```bash
-npm install -g specter-kit
+npm install -g AnvinX1/SPECTER-The-Illusive-Security-Protocol
 cd your-project
 specter init
 ```
 </details>
 
 <details>
-<summary><strong>npx (no global install)</strong></summary>
+<summary><strong>npx — no global install</strong></summary>
 
 ```bash
 cd your-project
-npx specter-kit init
+npx AnvinX1/SPECTER-The-Illusive-Security-Protocol init
 ```
 </details>
 
@@ -282,19 +285,29 @@ npx specter-kit init
 <summary><strong>pnpm</strong></summary>
 
 ```bash
-pnpm add -g specter-kit
+pnpm add -g AnvinX1/SPECTER-The-Illusive-Security-Protocol
 cd your-project
 specter init
 ```
 </details>
 
 <details>
-<summary><strong>Standalone (no Node.js required)</strong></summary>
+<summary><strong>Clone + manual (no npm required)</strong></summary>
 
 ```bash
-git clone https://github.com/anvin/specter-kit.git
+git clone https://github.com/AnvinX1/SPECTER-The-Illusive-Security-Protocol.git specter-kit
 cd your-project
 bash ../specter-kit/setup.sh init
+```
+</details>
+
+<details>
+<summary><strong>npm (after npm publish)</strong></summary>
+
+Once published to npm:
+```bash
+npm install -g specter-kit
+specter init
 ```
 </details>
 

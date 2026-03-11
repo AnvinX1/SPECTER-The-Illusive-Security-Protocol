@@ -1,0 +1,59 @@
+{
+  "name": "specter-kit",
+  "version": "1.0.0",
+  "description": "SPECTER — The Illusive Security Protocol. Modular security skills for autonomous IDE agents.",
+  "author": "Anvin (Illusive Operations)",
+  "license": "MIT",
+  "homepage": "https://github.com/anvin/specter-kit",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anvin/specter-kit.git"
+  },
+  "scripts": {
+    "postinstall": "node bin/postinstall.js"
+  },
+  "bin": {
+    "specter": "./bin/specter.js"
+  },
+  "keywords": [
+    "security",
+    "pentest",
+    "agent",
+    "copilot",
+    "cursor",
+    "claude",
+    "skills",
+    "vulnerability",
+    "assessment",
+    "owasp",
+    "bug-bounty",
+    "specter"
+  ],
+  "files": [
+    "bin/",
+    "adapters/",
+    "specter.md",
+    "specter.instructions.md",
+    "references/",
+    "scripts/",
+    "active-directory-and-identity-audit/",
+    "api-security-review/",
+    "bug-bounty-triage/",
+    "ci-cd-supply-chain-security/",
+    "cloud-config-audit/",
+    "container-and-runtime-security/",
+    "dependency-and-secret-audit/",
+    "evidence-and-reporting/",
+    "exploit-validation/",
+    "indepth-recon-analysis/",
+    "mobile-security-assessment/",
+    "network-infrastructure-pentest/",
+    "secure-code-review/",
+    "security-governance/",
+    "threat-modeling/",
+    "web-misconfig-review/"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

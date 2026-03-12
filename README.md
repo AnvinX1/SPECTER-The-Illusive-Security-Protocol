@@ -25,7 +25,7 @@
 
 ---
 
-SPECTER is a zero-dependency skill framework that transforms any LLM-powered coding agent into a governed security operator. One command installs 16 offensive security skills, 22 enforceable guardrails, and a structured assessment workflow into any project — with auto-detection for all major agent platforms.
+SPECTER is a zero-dependency skill framework that transforms any LLM-powered coding agent into a governed security operator. One command installs 17 offensive security skills, 22 enforceable guardrails, and a structured assessment workflow into any project — with auto-detection for all major agent platforms.
 
 <br>
 
@@ -80,11 +80,11 @@ specter init --agent copilot,cursor   # target specific platforms
 | Domain | Skills | Covers |
 |--------|:------:|--------|
 | **Governance & Triage** | 2 | Authorization enforcement, scope control, 22 guardrails, finding intake & dedup |
-| **Reconnaissance & Threat Modeling** | 2 | Attack surface mapping, STRIDE/PASTA, risk prioritization |
+| **Reconnaissance & Threat Modeling** | 2 | Attack surface mapping, STRIDE/PASTA, AI threat actor profiling, risk prioritization |
 | **Code & Application** | 3 | Source review, API security (OWASP Top 10), server misconfiguration |
 | **Infrastructure & Cloud** | 3 | Cloud IAM/CIS, container escape & K8s, network segmentation |
-| **Supply Chain & Identity** | 3 | Dependency CVEs, secret detection, CI/CD pipelines, AD/Kerberos |
-| **Exploit & Mobile** | 2 | PoC validation, OWASP Mobile Top 10, Frida/Objection |
+| **Supply Chain & Identity** | 3 | Dependency CVEs, secret detection, AI hallucinated packages, CI/CD pipelines, AD/Kerberos |
+| **Exploit, Mobile & AI** | 3 | PoC validation, OWASP Mobile Top 10, LLM/AI red teaming, OWASP LLM Top 10 2025 |
 | **Reporting** | 1 | Evidence compilation, redaction, statistics |
 
 <br>
@@ -96,7 +96,8 @@ governance ──► recon ──► threat model
                               │
               ┌───────────────┼───────────────┐
               ▼               ▼               ▼
-         code & app    infra & cloud    supply chain
+         code & app    infra & cloud      AI / LLM
+                             supply chain
               │               │               │
               └───────────────┼───────────────┘
                               ▼
@@ -114,7 +115,7 @@ Every engagement starts with `security-governance` — scope authorization and 2
 
 | Type | Count | Description |
 |------|:-----:|-------------|
-| Security Skills | 16 | Structured SKILL.md workflows with standard finding formats |
+| Security Skills | 17 | Structured SKILL.md workflows with standard finding formats |
 | Reference Docs | 11 | Checklists, attack patterns, severity matrix, CIS benchmarks |
 | Helper Scripts | 8 | Finding normalization, dedup, export, redaction, validation |
 | Guardrails | 22 | Scope enforcement, evidence standards, regulatory escalation |

@@ -106,6 +106,7 @@ Audit continuous integration/delivery pipelines and software supply chains for c
    - Setup.py / postinstall scripts executing arbitrary code
    - Makefile targets with network access during build
    - Compiler plugins or build tool extensions from untrusted sources
+   - **AI-assisted code generation risk:** If the CI pipeline generates or accepts AI-written code (Copilot, Cursor, etc. in automated workflows), verify that hallucinated dependency names are caught before install. Implement a registry pre-check step: verify every new package exists with expected publisher before `npm install` / `pip install` runs.
 
 5. **Artifact Integrity**
    - Container images signed (Docker Content Trust, cosign/sigstore)?

@@ -65,6 +65,7 @@ All paths in this document and in SKILL.md files are **relative to the `.specter
 |-------|------|------|
 | exploit-validation | `skills/exploit-validation/SKILL.md` | Suspected finding needs PoC |
 | mobile-security-assessment | `skills/mobile-security-assessment/SKILL.md` | iOS/Android app in scope |
+| llm-and-ai-security | `skills/llm-and-ai-security/SKILL.md` | LLM chatbot, AI agent, GenAI feature, AI red teaming |
 
 ### Reporting
 | Skill | Path | When |
@@ -80,12 +81,20 @@ Governance → Recon → [Threat Model] → Parallel Assessment → Triage → V
 ```
 
 1. **security-governance** — Set scope and authorization
-2. **indepth-recon-analysis** — Map the target
-3. **threat-modeling** — (optional) Analyze design-level risks
-4. **Assessment skills** — Run appropriate skills in parallel based on target type
+2. **indepth-recon-analysis** — Map the target (includes AI/LLM feature fingerprinting)
+3. **threat-modeling** — (optional) Analyze design-level risks, including AI/ML threat actors
+4. **Assessment skills** — Run appropriate skills in parallel based on target type:
+   - Traditional web/API/code targets → existing skill set
+   - AI/LLM features detected → also invoke `llm-and-ai-security`
+   - AI red teaming engagement → `llm-and-ai-security` as primary skill
 5. **bug-bounty-triage** — Process all findings through triage (routing matrix decides next skill)
-6. **exploit-validation** — Validate suspected findings with PoC
+6. **exploit-validation** — Validate suspected findings with PoC (includes AI/LLM PoC development)
 7. **evidence-and-reporting** — Compile final report
+8. **Post-Remediation Re-Validation** *(after client applies fixes)*:
+   - Re-test each finding marked as `Remediated`
+   - Update finding status: `Confirmed` → `Remediated (Verified)` or `Re-Opened`
+   - Generate a delta report via `evidence-and-reporting` (delta report type)
+   - Close findings that pass re-validation; escalate any regressions immediately
 
 ---
 
@@ -151,3 +160,29 @@ All skills enforce these — see `skills/security-governance/SKILL.md` for full 
 | `scripts/merge_reports.py` | Combine multiple reports |
 | `scripts/validate_finding.py` | Format compliance check |
 | `scripts/redact_evidence.py` | PII/secret redaction |
+| `scripts/http_headers_check.py` | **Active** — probe HTTP security headers on a live URL |
+| `scripts/tls_check.py` | **Active** — check TLS version, cipher, certificate expiry |
+| `scripts/port_probe.py` | **Active** — fast TCP port prober with service banners |
+| `scripts/cmd_runner.py` | **Active** — run allowlisted security tools (nmap, nikto…) safely |
+
+### Running Active Checks
+
+Active scripts can be invoked directly or via the `specter run` CLI command:
+
+```bash
+specter run http-headers https://example.com
+specter run tls example.com --port 8443
+specter run ports 10.0.0.1 --ports top1000
+specter run secrets ./src
+specter run tool nmap -sV -p 80,443 example.com
+specter run tool --list           # show all allowlisted tools
+```
+
+Or directly:
+
+```bash
+python3 .specter/scripts/http_headers_check.py https://example.com
+python3 .specter/scripts/tls_check.py example.com --port 443
+python3 .specter/scripts/port_probe.py 10.0.0.1 --ports 22,80,443,3306
+python3 .specter/scripts/cmd_runner.py nmap -sV -T4 example.com
+```

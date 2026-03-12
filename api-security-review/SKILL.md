@@ -133,7 +133,72 @@ Perform targeted security review of API endpoints. APIs present unique attack su
    - Path traversal in file-related parameters
    - Type confusion (string where int expected, array where string expected)
 
-7. **Classify & Route** — Per `severity-matrix.md`, route to `bug-bounty-triage`
+7. **LLM/AI API Security Testing** (when endpoint is an AI API or wraps an AI provider):
+
+   **Authentication & Authorization:**
+   - [ ] Is the AI endpoint authenticated? Test without token.
+   - [ ] IDOR: can user A access user B's AI conversation via ID manipulation?
+   - [ ] Multi-tenant isolation: do separate org/user contexts remain isolated?
+   - [ ] Is the AI provider API key exposed in request/response headers or body?
+
+   **Prompt Injection via API:**
+   - [ ] Direct injection via API `message` / `prompt` / `query` parameters
+   - [ ] Indirect injection: test if documents uploaded via API are processed unsanitized into the prompt
+   - [ ] Role manipulation via API-provided `role` field (can caller set `role: system`?)
+   - [ ] System prompt override via model parameter fields
+
+   **Insecure Output Handling:**
+   - [ ] Does API response contain model output used by downstream code? Check for XSS/SQLi sinks.
+   - [ ] Test markdown injection: craft prompt to include `![x](https://attacker.com/track)` in response
+   - [ ] Test SSRF: prompt model to include URL → check if server fetches it
+
+   **Streaming Endpoints (SSE / WebSocket):**
+   - [ ] Authentication enforced per-connection (not just on HTTP upgrade)
+   - [ ] No CSRF on WebSocket handshake (origin validation)
+   - [ ] Streaming responses don't leak other users' tokens in partial output
+
+   **Rate Limiting & Resource Consumption:**
+   - [ ] Rate limiting on AI endpoint (absent = billing abuse / DoS)
+   - [ ] Max token / max response length enforced
+   - [ ] Prompt amplification: small input → maximum response → test limits
+
+   **AI Plugin / Function-Calling APIs (if exposed):**
+   - [ ] Enumerate all tools/functions the API exposes to the model
+   - [ ] Test each function with attacker-controlled arguments via prompt injection
+   - [ ] Verify tool output is not trusted unchecked by downstream logic
+
+   > If LLM/AI is the primary subject: invoke `llm-and-ai-security/SKILL.md` for full assessment.
+
+8. **Webhook Security Testing** (if webhooks are in scope or delivered to attacker-controlled endpoints):
+
+   **Signature Validation:**
+   - [ ] Does the endpoint validate an HMAC signature (e.g., `X-Hub-Signature-256`)?
+   - [ ] Test with a missing, empty, or forged signature header — does the server still process it?
+   - [ ] Check if the shared secret used for HMAC signing is rotatable and stored securely
+   - [ ] Test timing-safe comparison: use a nearly-correct signature to detect non-constant-time comparison
+
+   **Replay Attack via Timestamp Bypass:**
+   - [ ] Is a timestamp or nonce included in the signed payload?
+   - [ ] Test replaying a captured valid webhook request after expiry — is it rejected?
+   - [ ] Check tolerance window (>5 min is too long; no window = indefinite replay)
+
+   **Retry Logic Abuse (Idempotency Bypass):**
+   - [ ] Does the receiver process retried deliveries idempotently?
+   - [ ] Test by re-delivering the same webhook event ID multiple times — does it trigger duplicate actions (double charge, double provisioning)?
+   - [ ] Check if idempotency key is validated server-side or only client-trusted
+
+   **SSRF via Webhook Callback URL:**
+   - [ ] Can an attacker register an attacker-controlled URL as the webhook destination?
+   - [ ] Test with internal IPs (`169.254.169.254`, `10.0.0.0/8`, `localhost`) as the callback URL
+   - [ ] Check if URL allowlisting or DNS rebinding protection is in place
+   - [ ] Verify the webhook delivery service cannot be used as an HTTP proxy to internal services
+
+   **Transport Security:**
+   - [ ] Webhook delivery enforces HTTPS only (no HTTP downgrade)
+   - [ ] TLS certificate validation on the delivery endpoint (no `verify=False`)
+   - [ ] Webhook payload does not contain sensitive data that could be intercepted in transit
+
+9. **Classify & Route** — Per `severity-matrix.md`, route to `bug-bounty-triage`
 
 ## Allowed Actions
 

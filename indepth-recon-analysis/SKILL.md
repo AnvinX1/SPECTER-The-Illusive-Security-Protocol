@@ -51,6 +51,13 @@ Systematically analyze reconnaissance data to map the full attack surface of a t
    - Cloud services (AWS, Azure, GCP indicators)
    - CDN/WAF presence (Cloudflare, Akamai, etc.)
    - Version numbers where observable
+   - **AI/LLM indicators:**
+     - AI chatbot or assistant interfaces (conversational UI patterns)
+     - API endpoints calling AI providers (network requests to `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`, etc.)
+     - Streaming response patterns (SSE with `data:` lines, chunked AI output)
+     - RAG/knowledge base indicators (vector search endpoints, embedding APIs)
+     - AI plugin or function-call patterns in API responses
+     - Client-side AI SDK inclusion (OpenAI JS SDK, LangChain browser build)
 
 4. **Entry Point Mapping** — For each endpoint, identify:
    - Input vectors (query params, POST body, headers, cookies, file uploads)
@@ -85,6 +92,18 @@ Systematically analyze reconnaissance data to map the full attack surface of a t
    - Flag high-value targets (admin panels, payment flows, PII endpoints)
 
 8. **Route Findings** — Send identified vectors to appropriate skills via `bug-bounty-triage`
+
+## AI-Augmented Recon Techniques
+
+Use AI tooling to accelerate recon within authorized scope:
+
+- **AI-powered wordlist generation:** Generate target-specific content discovery wordlists using LLMs fed with app context (technology stack, domain, feature names). More effective than generic wordlists for finding niche endpoints.
+  ```
+  Prompt pattern: "Generate a wordlist of API paths for a [fintech / healthcare / e-commerce] app built with [technology]. Include: resource names, admin paths, versioning patterns, common file names."
+  ```
+- **LLM-assisted source code analysis:** Feed stripped source files to LLM to identify entry points, data flows, and potential vulnerability patterns at speed — especially effective for unfamiliar languages or frameworks.
+- **AI summarization of large recon datasets:** Use LLM to summarize and categorize large subdomain lists, port scan output, or HTTP response dumps to highlight anomalies.
+- **AI-assisted report enrichment:** Use AI to cross-reference discovered technologies against known CVE patterns and suggest priority testing targets.
 
 ## Allowed Actions
 

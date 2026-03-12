@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const VERSION = '1.0.0';
+const VERSION = require(path.resolve(__dirname, '..', 'package.json')).version;
 const SPECTER_DIR = '.specter';
 
 // ── ANSI Colors (zero dependencies) ────────────────────────────
@@ -64,6 +64,7 @@ const SKILL_DIRS = [
   'evidence-and-reporting',
   'exploit-validation',
   'indepth-recon-analysis',
+  'llm-and-ai-security',
   'mobile-security-assessment',
   'network-infrastructure-pentest',
   'secure-code-review',
@@ -129,6 +130,7 @@ const SKILL_META = {
   'Specialized': [
     ['exploit-validation',       'PoC development, exploitation, confirmation'],
     ['mobile-security-assessment', 'OWASP Mobile Top 10, Frida, Objection'],
+    ['llm-and-ai-security',      'OWASP LLM Top 10, prompt injection, AI red teaming'],
   ],
   'Reporting': [
     ['evidence-and-reporting',   'Report compilation, redaction, statistics'],
@@ -140,7 +142,10 @@ const SKILL_META = {
 // ══════════════════════════════════════════════════════════════════
 
 function copyRecursiveSync(src, dest) {
-  if (!fs.existsSync(src)) return 0;
+  if (!fs.existsSync(src)) {
+    console.warn(`  [specter] warning: source not found, skipping: ${src}`);
+    return 0;
+  }
   let count = 0;
   const stat = fs.statSync(src);
   if (stat.isDirectory()) {
@@ -560,12 +565,91 @@ function cmdUpdate() {
   console.log(`\n${c.green}${c.bold}  SPECTER updated to v${VERSION}.${c.reset}\n`);
 }
 
+function cmdRun(runArgs) {
+  // runArgs = everything after 'run' on the argv (raw, un-parsed)
+  const CHECK_MAP = {
+    'http-headers': 'http_headers_check.py',
+    'tls':          'tls_check.py',
+    'ports':        'port_probe.py',
+    'secrets':      'secret_grep.py',
+    'tool':         'cmd_runner.py',
+  };
+
+  const check = runArgs[0];
+
+  if (!check || check === '--help' || check === '-h') {
+    console.log('');
+    console.log(`  ${c.bold}Usage:${c.reset} specter run <check> <target> [options]\n`);
+    console.log(`  ${c.bold}Checks:${c.reset}`);
+    console.log(`    ${c.cyan}http-headers${c.reset}  <url>                  Check HTTP security headers`);
+    console.log(`    ${c.cyan}tls${c.reset}           <host> [--port N]      Check TLS/SSL configuration`);
+    console.log(`    ${c.cyan}ports${c.reset}         <host> [--ports spec]  TCP port probe with banners`);
+    console.log(`    ${c.cyan}secrets${c.reset}       [dir]                  Scan directory for secrets`);
+    console.log(`    ${c.cyan}tool${c.reset}          <toolname> [args...]   Run an allowlisted tool`);
+    console.log('');
+    console.log(`  ${c.bold}Examples:${c.reset}`);
+    console.log(`    ${c.dim}$${c.reset} specter run http-headers https://example.com`);
+    console.log(`    ${c.dim}$${c.reset} specter run tls example.com --port 8443`);
+    console.log(`    ${c.dim}$${c.reset} specter run ports 10.0.0.1 --ports top1000 --threads 100`);
+    console.log(`    ${c.dim}$${c.reset} specter run secrets ./src --include '.env,.py'`);
+    console.log(`    ${c.dim}$${c.reset} specter run tool nmap -sV -p 80,443 example.com`);
+    console.log(`    ${c.dim}$${c.reset} specter run tool --list`);
+    console.log('');
+    return;
+  }
+
+  const scriptName = CHECK_MAP[check];
+  if (!scriptName) {
+    err(`Unknown check: ${check}`);
+    err(`Valid checks: ${Object.keys(CHECK_MAP).join(', ')}`);
+    process.exit(1);
+  }
+
+  // Require a target for checks that need one
+  const needsTarget = check !== 'secrets' && check !== 'tool';
+  if (needsTarget && !runArgs[1]) {
+    err(`specter run ${check} requires a target.`);
+    err(`Example: specter run ${check} <target>`);
+    process.exit(1);
+  }
+
+  // Resolve script: prefer installed .specter/scripts/ over package root
+  const projectDir = process.cwd();
+  const installedScript = path.join(projectDir, SPECTER_DIR, 'scripts', scriptName);
+  const pkgScript = path.join(PKG_ROOT, 'scripts', scriptName);
+  const scriptPath = fs.existsSync(installedScript) ? installedScript : pkgScript;
+
+  if (!fs.existsSync(scriptPath)) {
+    err(`Script not found: ${scriptName}`);
+    err(`Run 'specter init' to install SPECTER scripts, or check your SPECTER_DIR.`);
+    process.exit(1);
+  }
+
+  // Args to pass to the Python script: everything after the check name
+  const scriptArgs = runArgs.slice(1);
+
+  const { spawnSync } = require('child_process');
+  const python = process.platform === 'win32' ? 'python' : 'python3';
+
+  const result = spawnSync(python, [scriptPath, ...scriptArgs], {
+    stdio: 'inherit',
+    shell: false,  // never true — prevents injection even if scriptArgs contains metacharacters
+  });
+
+  if (result.error) {
+    err(`Failed to start Python: ${result.error.message}`);
+    err('Ensure python3 is installed and in PATH.');
+    process.exit(1);
+  }
+
+  process.exit(result.status ?? 0);
+}
+
 function cmdHelp() {
   console.log(BANNER);
   console.log(`  ${c.bold}Usage:${c.reset} specter <command> [options]\n`);
   console.log(`  ${c.bold}Commands:${c.reset}`);
-  console.log(`    ${c.cyan}init${c.reset}       Initialize SPECTER in current project`);
-  console.log(`    ${c.cyan}list${c.reset}       List available security skills`);
+  console.log(`    ${c.cyan}init${c.reset}       Initialize SPECTER in current project`);    console.log(`    ${c.cyan}run${c.reset}        Run an active security check or tool`);  console.log(`    ${c.cyan}list${c.reset}       List available security skills`);
   console.log(`    ${c.cyan}doctor${c.reset}     Verify installation health`);
   console.log(`    ${c.cyan}update${c.reset}     Update skills to latest version`);
   console.log(`    ${c.cyan}banner${c.reset}     Replay the animated banner`);
@@ -579,8 +663,11 @@ function cmdHelp() {
   console.log(`    ${c.dim}$${c.reset} specter init`);
   console.log(`    ${c.dim}$${c.reset} specter init --agent all`);
   console.log(`    ${c.dim}$${c.reset} specter init --agent copilot,cursor`);
-  console.log(`    ${c.dim}$${c.reset} specter init --agent cursor --force`);
-  console.log(`    ${c.dim}$${c.reset} specter doctor`);
+  console.log(`    ${c.dim}$${c.reset} specter init --agent cursor --force`);    console.log(`    ${c.dim}$${c.reset} specter run http-headers https://example.com`);
+    console.log(`    ${c.dim}$${c.reset} specter run tls example.com`);
+    console.log(`    ${c.dim}$${c.reset} specter run ports 10.0.0.1 --ports top1000`);
+    console.log(`    ${c.dim}$${c.reset} specter run secrets ./src`);
+    console.log(`    ${c.dim}$${c.reset} specter run tool nmap -sV -p 80,443 example.com`);  console.log(`    ${c.dim}$${c.reset} specter doctor`);
   console.log(`    ${c.dim}$${c.reset} specter update`);
   console.log(`    ${c.dim}$${c.reset} specter banner`);
   console.log('');
@@ -602,8 +689,9 @@ async function main() {
   const { cmd, flags } = parseArgs(process.argv.slice(2));
 
   switch (cmd) {
-    case 'init':     await cmdInit(flags);   break;
-    case 'list':     cmdList();              break;
+    case 'init':     await cmdInit(flags);                  break;
+    case 'run':      cmdRun(process.argv.slice(3));          break;
+    case 'list':     cmdList();                              break;
     case 'doctor':   cmdDoctor();            break;
     case 'update':   cmdUpdate();            break;
     case 'banner':   await cmdBanner();      break;

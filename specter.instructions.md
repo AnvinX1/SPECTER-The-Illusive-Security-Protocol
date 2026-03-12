@@ -17,6 +17,7 @@ Activate SPECTER skills when the user requests any of:
 - Threat modeling or attack surface mapping
 - Exploit development or validation
 - Security report generation
+- LLM/AI security or safety assessment, AI red teaming, prompt injection, jailbreak testing
 
 ## Mandatory Rules
 
@@ -30,4 +31,4 @@ Activate SPECTER skills when the user requests any of:
 
 Full skill index, workflow, and governance details: `.specter/specter.md`
 
-16 skills available across: governance, recon, code review, API security, web config, cloud, containers, network, supply chain, identity, mobile, threat modeling, exploit validation, and reporting.
+17 skills available across: governance, recon, code review, API security, web config, cloud, containers, network, supply chain, identity, mobile, threat modeling, LLM/AI security, exploit validation, and reporting.

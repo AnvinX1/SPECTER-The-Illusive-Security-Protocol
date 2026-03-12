@@ -12,7 +12,7 @@ All SPECTER files are at `.specter/`:
 
 ## Protocol
 
-For any security-related task:
+For any security-related task (assessment, pentest, code review, vulnerability analysis, AI/LLM security, bug bounty, threat modeling):
 
 1. **Governance first**: Read `.specter/skills/security-governance/SKILL.md`. Confirm authorization and scope before proceeding.
 2. **Select skill**: Consult `.specter/specter.md` for the skill index. Match your task to the appropriate skill.
@@ -21,7 +21,7 @@ For any security-related task:
 5. **Severity ratings**: Apply `.specter/references/severity-matrix.md` (S1-S5 severity, C1-C4 confidence).
 6. **Triage**: Route through `.specter/skills/bug-bounty-triage/SKILL.md`.
 
-## Skills (16)
+## Skills (17)
 
 | Category | Skills |
 |----------|--------|
@@ -30,7 +30,7 @@ For any security-related task:
 | Application | secure-code-review, api-security-review, web-misconfig-review |
 | Infrastructure | cloud-config-audit, container-and-runtime-security, network-infrastructure-pentest |
 | Supply Chain | dependency-and-secret-audit, ci-cd-supply-chain-security, active-directory-and-identity-audit |
-| Specialized | exploit-validation, mobile-security-assessment |
+| Specialized | exploit-validation, mobile-security-assessment, llm-and-ai-security |
 | Reporting | evidence-and-reporting |
 
 ## Non-Negotiable Rules

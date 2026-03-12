@@ -170,3 +170,31 @@ When recommending tools to the user:
 3. **Note prerequisites** — some tools need root, jailbreak, or specific runtimes
 4. **Respect scope** — only suggest tools usable within authorized assessment scope
 5. **Version awareness** — some tools change rapidly; note when version matters
+
+---
+
+## AI / LLM Security Testing
+
+| Tool | Purpose | License | Notes |
+|------|---------|---------|-------|
+| Garak | LLM vulnerability scanner — probes for prompt injection, jailbreaks, data leakage | Apache 2.0 | NVIDIA; CLI-based; extensible probe framework |
+| PyRIT | Python Risk Identification Toolkit for generative AI red teaming | MIT | Microsoft; orchestrates multi-turn attacks, memory-aware |
+| promptfoo | LLM red teaming, evaluation, and regression testing | MIT | Config-driven; supports OpenAI, Anthropic, local models |
+| PurpleLlama / CyberSecEval | LLM cybersecurity evaluation benchmarks | MIT | Meta; measures model's security code gen quality |
+| HouYi | LLM prompt injection framework | MIT | Research tool for indirect injection |
+| rebuff | Prompt injection detection layer (defensive) | MIT | Use to test if target has detection; bypass testing |
+| Adversarial Robustness Toolbox (ART) | ML adversarial attack and defense library | MIT | IBM; evasion, poisoning, extraction attacks |
+| TextAttack | NLP adversarial attack framework | MIT | Mutation-based prompt attacks |
+| LLMFuzzer | LLM fuzzing for jailbreaks and misbehavior | Apache 2.0 | Automated jailbreak discovery |
+| Burp Suite (AI extensions) | HTTP proxy for AI API traffic inspection | Commercial/Community | Intercept/modify AI API calls |
+| OWASP Haystack | LLM security evaluation dataset | Apache 2.0 | Benchmark prompts for safety/security testing |
+
+## AI-Augmented Offensive Security Tools
+
+| Tool | Purpose | License | Notes |
+|------|---------|---------|-------|
+| Nuclei + AI templates | Template-based scanner with AI-generated templates | MIT | Community AI templates on Nuclei Templates Hub |
+| PentestGPT | LLM-assisted pentest guidance and automation | GPLv3 | GPT-4 integrated task guidance |
+| ReconFTW (AI mode) | Automated recon with AI-assisted summarization | GPLv3 | Integrates with multiple recon tools |
+| BurpGPT | Burp Suite extension: AI-assisted request/response analysis | Apache 2.0 | GPT-powered passive scanner |
+| AutoRecon | Automated multi-tool recon (AI-assisted triage possible) | GPLv3 | Good for phase automation |

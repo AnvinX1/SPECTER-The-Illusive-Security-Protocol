@@ -35,6 +35,9 @@ Define and enforce the authorization boundary, scope constraints, and operationa
    - Bug bounty program URL with scope definition
    - Pentest statement of work / authorization letter reference
    - Explicit user statement: "I am authorized to test [target]"
+   - **For AI red teaming engagements:** confirm authorization separately for:
+     - **AI security testing** (prompt injection, data leakage, agent misuse, IDOR via AI) — standard pentest auth applies
+     - **AI safety testing** (jailbreaks, harmful content bypass, constitutional classifier bypass) — often requires additional stakeholder sign-off; clarify explicitly before proceeding
 2. **Define Scope** — Document exactly what is in scope and what is not. Include:
    - Target domains, IPs, endpoints, repositories
    - Excluded areas (production databases, third-party services, etc.)

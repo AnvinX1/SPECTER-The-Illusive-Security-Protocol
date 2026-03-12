@@ -67,6 +67,10 @@ Systematically audit the project's dependency tree for known vulnerabilities (CV
    - Packages with post-install scripts doing unusual things
    - Excessive transitive dependency trees
    - Pinning: are versions pinned or using floating ranges?
+   - **AI-generated/hallucinated package names:** If code uses AI-suggested dependencies, verify each package exists on the official registry with expected download volume and provenance. LLMs are known to hallucinate plausible-sounding package names that don't exist — threat actors monitor for these and register them. Flag any package that:
+     - Has fewer than 1,000 lifetime downloads on a major registry
+     - Was created within the last 6 months and is not from a known publisher
+     - Doesn't exist at all on the expected registry
 
 5. **License Risk** — Flag:
    - Copyleft licenses in proprietary projects (GPL, AGPL)
@@ -92,6 +96,15 @@ Systematically audit the project's dependency tree for known vulnerabilities (CV
    - Generic high-entropy strings in assignment context
    - Common variable names: `password`, `secret`, `token`, `api_key`, `access_key`
    - Base64-encoded credentials
+   - **AI provider API keys:**
+     - OpenAI: `sk-` prefix, `OPENAI_API_KEY`
+     - Anthropic: `sk-ant-` prefix, `ANTHROPIC_API_KEY`
+     - Google AI/Gemini: `AIza` prefix, `GOOGLE_API_KEY`
+     - Cohere: `COHERE_API_KEY`
+     - Mistral: `MISTRAL_API_KEY`
+     - Hugging Face: `hf_` prefix, `HF_TOKEN`
+     - AWS Bedrock: standard AWS key patterns in AI-related context
+   - **AI model artifacts** in repository (model weight files: `.pt`, `.safetensors`, `.gguf`, `.bin` — verify they are intended and not accidentally committed)
 
 8. **Git History Scan** — Check for secrets in:
    - Previous commits (rotated but still in history)

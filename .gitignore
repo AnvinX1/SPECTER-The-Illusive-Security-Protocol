@@ -1,0 +1,16 @@
+# Working / source material (not part of the package)
+data/
+
+# Python
+scripts/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Node
+node_modules/
+npm-debug.log*
+
+# SPECTER project config (written by specter init in consuming projects)
+.specterrc

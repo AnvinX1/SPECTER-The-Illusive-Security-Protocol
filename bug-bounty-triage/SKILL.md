@@ -68,7 +68,8 @@ Process raw security findings through structured triage: validate scope, dedupli
 | Insufficient info, attack surface unclear | `indepth-recon-analysis` | Missing context, needs enumeration |
 | Server/infra configuration issue | `web-misconfig-review` | Headers, TLS, CORS, directory exposure |
 | API-specific vulnerability | `api-security-review` | REST/GraphQL/WebSocket endpoint |
-| Dependency or supply chain issue | `dependency-and-secret-audit` | CVE in library, outdated package, leaked secret |
+| LLM/AI model or agent vulnerability | `llm-and-ai-security` | Prompt injection, jailbreak, AI data leakage, agent misuse, AI safety bypass |
+| Dependency or supply chain issue | `dependency-and-secret-audit` | CVE in library, outdated package, leaked secret, AI hallucinated package |
 | Cloud infrastructure misconfiguration | `cloud-config-audit` | IAM, storage, network, compute finding |
 | Container or K8s issue | `container-and-runtime-security` | Image vuln, escape path, pod misconfiguration |
 | CI/CD pipeline risk | `ci-cd-supply-chain-security` | Pipeline config, artifact integrity, registry |

@@ -19,7 +19,7 @@ const HIDE = '\x1b[?25l';
 const SHOW = '\x1b[?25h';
 const CLR  = '\x1b[2K';
 
-const V = '1.0.0';
+const V = require('../package.json').version;
 
 const LOGO = [
   '███████╗██████╗ ███████╗ ██████╗████████╗███████╗██████╗ ',
@@ -45,7 +45,7 @@ function staticBanner() {
   console.log(`${P}  The Illusive Security Protocol  v${V}`);
   console.log(`${P}  by Anvin · Illusive Operations`);
   console.log('');
-  console.log(`${P}  16 skills · 11 references · 8 scripts`);
+  console.log(`${P}  17 skills · 11 references · 12 scripts`);
   console.log(`${P}  Run 'specter init' to activate.`);
   console.log('');
 }
@@ -95,7 +95,7 @@ async function animatedBanner() {
     await sleep(60);
 
     // ▸ Phase 4: Stats
-    console.log(`${P}  ${GREEN}◆${RST} 16 security skills   ${GREEN}◆${RST} 11 reference docs   ${GREEN}◆${RST} 8 helper scripts`);
+    console.log(`${P}  ${GREEN}◆${RST} 17 security skills   ${GREEN}◆${RST} 11 reference docs   ${GREEN}◆${RST} 12 helper scripts`);
     console.log('');
     await sleep(40);
 

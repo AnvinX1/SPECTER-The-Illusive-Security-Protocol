@@ -86,10 +86,11 @@ Proactively identify threats before or during security assessment using structur
    |-------|-----------|------------|--------------|
    | Script kiddie | Low | Notoriety, fun | Public exploits, automated scanners |
    | Opportunistic attacker | Medium | Financial gain | Known CVEs, credential stuffing, phishing |
-   | Organized crime | High | Financial gain, ransomware | Spear phishing, zero-days, persistence |
-   | Insider threat | Medium-High | Revenge, financial, espionage | Authorized access abuse, data exfiltration |
-   | Competitor | Medium-High | Competitive advantage | Targeted attacks, IP theft |
-   | Nation-state | Very High | Espionage, disruption | APT, supply chain, zero-days, infrastructure |
+   | AI-augmented attacker | Medium→High | Financial gain, scale | AI-generated malware, AI-powered phishing (+1,265%), deepfake social engineering, AI-assisted recon, AI wordlist generation |
+   | Organized crime | High | Financial gain, ransomware | Spear phishing, AI deepfakes, voice cloning, zero-days, persistence |
+   | Insider threat | Medium-High | Revenge, financial, espionage | Authorized access abuse, data exfiltration, AI tool misuse |
+   | Competitor | Medium-High | Competitive advantage | Targeted attacks, IP theft, AI model extraction |
+   | Nation-state | Very High | Espionage, disruption | APT, supply chain, AI-assisted exploitation, zero-days, infrastructure |
 
 6. **Attack Tree Construction** — For top threats:
    - Define attacker goal (root node)
@@ -104,13 +105,34 @@ Proactively identify threats before or during security assessment using structur
    - Existing control effectiveness
    - Detection capability
 
-8. **Testing Priority Map** — Translate threats to testing actions:
+8. **AI/LLM Component Threat Analysis** — When system includes AI/LLM features:
+
+   Apply STRIDE specifically to AI components:
+
+   | Component | Threat | Description | Skill |
+   |-----------|--------|-------------|-------|
+   | LLM chatbot / API | Spoofing | Impersonate model or system prompt | `llm-and-ai-security` |
+   | LLM prompt pipeline | Tampering | Prompt injection (direct / indirect) changes behavior | `llm-and-ai-security` |
+   | AI agentic tools | Elevation of Privilege | Injected prompt calls unauthorized tool | `llm-and-ai-security` |
+   | RAG knowledge base | Tampering | Attacker poisons vector store | `llm-and-ai-security` |
+   | Model output sink | Tampering | Insecure output handling → XSS, SQLi, RCE | `secure-code-review` |
+   | AI API key | Information Disclosure | Key exposed client-side or in responses | `dependency-and-secret-audit` |
+   | AI training data | Tampering | Data poisoning / adversarial training inputs | `llm-and-ai-security` |
+   | AI-integrated extension | Elevation of Privilege | IDOR via extension (e.g., Google Bard/Gemini pattern) | `api-security-review` |
+
+   Also consider AI-augmented attacker paths:
+   - AI-powered phishing targeting users of the system
+   - AI deepfake/voice clone for social engineering against staff
+   - AI-assisted recon and wordlist generation against the target
+   - AI-generated malware adapting to the target environment
+
+9. **Testing Priority Map** — Translate threats to testing actions:
    - Map each high-priority threat to specific assessment skill(s)
    - Define test scenarios that validate each threat
    - Prioritize assessment skill execution order based on threat ranking
    - Identify gaps: threats that current skills can't address
 
-9. **Output** — Deliver threat model document and testing priority guide
+10. **Output** — Deliver threat model document and testing priority guide
 
 ## Allowed Actions
 

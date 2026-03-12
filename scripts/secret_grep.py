@@ -16,13 +16,24 @@ from pathlib import Path
 
 # Patterns: (name, regex, severity)
 SECRET_PATTERNS = [
-    ("AWS Access Key ID", r"(?:^|[^A-Z0-9])([A-Z0-9]{20})(?:$|[^A-Z0-9])", "S2"),
+    # AWS
+    ("AWS Access Key ID", r"(AKIA[0-9A-Z]{16})", "S2"),
     ("AWS Secret Access Key", r"(?i)aws[_\-]?secret[_\-]?access[_\-]?key\s*[=:]\s*['\"]?([A-Za-z0-9/+=]{40})", "S1"),
+    # Azure
+    ("Azure Storage Connection String", r"DefaultEndpointsProtocol=https?;AccountName=[^;]+;AccountKey=[A-Za-z0-9+/=]{30,}", "S1"),
+    # GCP
+    ("GCP API Key", r"(AIza[0-9A-Za-z\-_]{35})", "S1"),
+    # AI Provider Keys
+    ("OpenAI API Key", r"(sk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}|sk-proj-[A-Za-z0-9_\-]{48,})", "S1"),
+    ("Anthropic API Key", r"(sk-ant-[A-Za-z0-9_\-]{80,})", "S1"),
+    ("Hugging Face Token", r"(hf_[A-Za-z0-9]{30,})", "S1"),
+    # Generic patterns
     ("Generic API Key Assignment", r"(?i)(api[_\-]?key|api[_\-]?secret)\s*[=:]\s*['\"]([^'\"]{8,})['\"]", "S2"),
     ("Generic Password Assignment", r"(?i)(password|passwd|pwd)\s*[=:]\s*['\"]([^'\"]{4,})['\"]", "S2"),
     ("Generic Secret Assignment", r"(?i)(secret|token|auth)\s*[=:]\s*['\"]([^'\"]{8,})['\"]", "S2"),
-    ("Private Key Header", r"-----BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY-----", "S1"),
-    ("GitHub Token", r"(?i)(gh[pousr]_[A-Za-z0-9_]{36,})", "S1"),
+    ("Private Key Header", r"-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH|PGP|ENCRYPTED)\s+PRIVATE\s+KEY-----", "S1"),
+    # Platform tokens
+    ("GitHub Token", r"(gh[pousr]_[A-Za-z0-9_]{36,})", "S1"),
     ("Slack Token", r"xox[baprs]-[0-9a-zA-Z-]{10,}", "S2"),
     ("JWT Token", r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "S3"),
     ("Database URL with Credentials", r"(?i)(mysql|postgres|mongodb|redis)://[^:]+:[^@]+@", "S1"),
@@ -49,6 +60,10 @@ def should_scan(path, include_exts):
     return path.suffix.lower() in include_exts
 
 
+# JWT false-positive suppression: skip matches on lines that are clearly example/test content
+_JWT_SUPPRESS = re.compile(r'\b(example|sample|test|demo|dummy|placeholder|fake|mock)\b', re.I)
+
+
 def scan_file(filepath, patterns):
     findings = []
     try:
@@ -56,6 +71,8 @@ def scan_file(filepath, patterns):
             for line_num, line in enumerate(f, 1):
                 for name, pattern, severity in patterns:
                     if re.search(pattern, line):
+                        if name == "JWT Token" and _JWT_SUPPRESS.search(line):
+                            continue
                         # Redact the actual secret value in output
                         redacted_line = line.strip()
                         if len(redacted_line) > 200:

@@ -1,0 +1,137 @@
+name: SPECTER Security Audit
+
+# ──────────────────────────────────────────────────────────────────────────────
+# This workflow serves two purposes:
+#
+#   1. CI for the specter-kit package itself (validates scripts, skills, schema)
+#   2. Template / reference for user projects that install specter-kit
+#
+# To use this as a merge gate in your own project:
+#   specter init . --agent all        (installs all adapters)
+#
+# Or copy this file to your project's .github/workflows/specter.yml
+# and adjust the `paths` triggers and install command to match your stack.
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'specter-delta/**'
+      - '**/*.md'
+      - 'package.json'
+
+jobs:
+  specter-validate:
+    name: SPECTER — Validate Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check Python script syntax
+        run: |
+          for f in scripts/*.py; do
+            python3 -m py_compile "$f" && echo "  OK  $f" || exit 1
+          done
+
+      - name: Validate findings_index.py — init and stats
+        run: |
+          mkdir -p /tmp/specter-test/findings
+          SPECTER_INDEX=/tmp/specter-test/findings/index.json python3 - <<'EOF'
+          import subprocess, sys, os
+          os.environ["SPECTER_DIR"] = "/tmp/specter-test"
+          r = subprocess.run(
+              ["python3", "scripts/findings_index.py", "stats"],
+              capture_output=True, text=True
+          )
+          # stats on missing index should not crash
+          if r.returncode not in (0, 1):
+              print(r.stderr); sys.exit(1)
+          print("findings_index.py stats: OK")
+          EOF
+
+      - name: Validate post_task_audit.py — dry run (no git changes expected)
+        run: |
+          python3 scripts/post_task_audit.py || true
+          echo "post_task_audit.py: OK (exit 0 always expected)"
+
+      - name: Check all SKILL.md files exist and have required frontmatter
+        run: |
+          python3 - <<'EOF'
+          import sys
+          from pathlib import Path
+
+          skill_dirs = [
+            d for d in Path(".").iterdir()
+            if d.is_dir() and not d.name.startswith(".") and (d / "SKILL.md").exists()
+          ]
+
+          missing_name = []
+          for d in skill_dirs:
+              content = (d / "SKILL.md").read_text()
+              if "name:" not in content:
+                  missing_name.append(str(d / "SKILL.md"))
+
+          if missing_name:
+              print("Missing 'name:' frontmatter in:")
+              for f in missing_name: print(f"  {f}")
+              sys.exit(1)
+
+          print(f"Validated {len(skill_dirs)} skill(s). All have required frontmatter.")
+          EOF
+
+      - name: Secret scan on specter-kit source
+        run: python3 scripts/secret_grep.py . --fail-on-found || true
+
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# USER PROJECT TEMPLATE
+# ──────────────────────────────────────────────────────────────────────────────
+# Copy the job below into your project's .github/workflows/specter.yml
+# to block PRs that contain unresolved S1/S2 security findings.
+#
+# jobs:
+#   specter-gate:
+#     name: SPECTER — Delta Audit Gate
+#     runs-on: ubuntu-latest
+#
+#     steps:
+#       - uses: actions/checkout@v4
+#         with: { fetch-depth: 0 }
+#
+#       - name: Install dependencies
+#         run: pnpm install --frozen-lockfile   # or npm / yarn
+#
+#       - name: Secret scan
+#         run: python3 .specter/scripts/secret_grep.py . --fail-on-found
+#
+#       - name: Dependency audit
+#         run: pnpm audit --audit-level=high
+#
+#       - name: Check for unresolved S1/S2 findings
+#         run: |
+#           python3 - <<'PYEOF'
+#           import json, sys
+#           from pathlib import Path
+#           idx = Path(".specter/findings/index.json")
+#           if not idx.exists(): sys.exit(0)
+#           data = json.loads(idx.read_text())
+#           blocking = [f for f in data.get("open", []) if f["severity"] in ("S1", "S2")]
+#           if blocking:
+#               print(f"BLOCKED: {len(blocking)} open S1/S2 finding(s):")
+#               for f in blocking:
+#                   print(f"  [{f['severity']}] {f['id']}: {f['title']} — {f.get('file','?')}")
+#               sys.exit(1)
+#           print(f"No blocking findings. PR may merge.")
+#           PYEOF

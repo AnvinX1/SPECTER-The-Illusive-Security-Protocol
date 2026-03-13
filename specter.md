@@ -72,6 +72,11 @@ All paths in this document and in SKILL.md files are **relative to the `.specter
 |-------|------|------|
 | evidence-and-reporting | `skills/evidence-and-reporting/SKILL.md` | Assessment complete, generate report |
 
+### Delta Audit (Continuous)
+| Skill | Path | When |
+|-------|------|------|
+| specter-delta | `skills/specter-delta/SKILL.md` | After every coding task that touches security-relevant files |
+
 ---
 
 ## Workflow
@@ -164,6 +169,8 @@ All skills enforce these — see `skills/security-governance/SKILL.md` for full 
 | `scripts/tls_check.py` | **Active** — check TLS version, cipher, certificate expiry |
 | `scripts/port_probe.py` | **Active** — fast TCP port prober with service banners |
 | `scripts/cmd_runner.py` | **Active** — run allowlisted security tools (nmap, nikto…) safely |
+| `scripts/post_task_audit.py` | **Hook** — run after every task (Stop hook); writes `.audit-pending` |
+| `scripts/findings_index.py` | **Findings** — manage `.specter/findings/index.json` (add/update/list/stats) |
 
 ### Running Active Checks
 
@@ -186,3 +193,58 @@ python3 .specter/scripts/tls_check.py example.com --port 443
 python3 .specter/scripts/port_probe.py 10.0.0.1 --ports 22,80,443,3306
 python3 .specter/scripts/cmd_runner.py nmap -sV -T4 example.com
 ```
+
+---
+
+## Session Protocol
+
+### On Every New Conversation (Security or Not)
+
+Before doing anything else, run these two checks silently:
+
+1. **Open findings check**
+   ```
+   cat .specter/findings/index.json
+   ```
+   If there are open S1 or S2 findings from a previous session:
+   → Surface them to the user immediately with a one-line summary.
+   → Example: "2 open S2 findings from last session (ipc-handlers.ts). Fix before new work?"
+
+2. **Pending audit check**
+   ```
+   cat .specter/.audit-pending
+   ```
+   If the file exists:
+   → Run `specter-delta` on the listed files before starting new work.
+   → Brief the user: "Running post-task security check on N changed files…"
+
+### On Every Task Completion
+
+After any task that modifies security-relevant files:
+→ Run `specter-delta` (see `specter.instructions.md` for full gate procedure)
+→ Log findings to `.specter/findings/`
+→ Only say "Done" when the severity gate passes
+
+### Configuring the Stop Hook (Claude Code)
+
+To automate the audit trigger without relying on AI self-enforcement, add to the project's `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .specter/scripts/post_task_audit.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The `post_task_audit.py` script will then write `.specter/.audit-pending` automatically after every agent response.

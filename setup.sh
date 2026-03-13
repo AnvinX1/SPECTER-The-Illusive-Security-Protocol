@@ -6,7 +6,7 @@
 # ══════════════════════════════════════════════════════════════════
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="1.2.0"
 SPECTER_REPO="https://github.com/anvin/specter-kit.git"
 SPECTER_DIR=".specter"
 
@@ -74,6 +74,7 @@ cmd_init() {
   mkdir -p "${specter_dest}/skills"
   mkdir -p "${specter_dest}/references"
   mkdir -p "${specter_dest}/scripts"
+  mkdir -p "${specter_dest}/findings"
 
   # Copy skills
   local skill_count=0
@@ -92,6 +93,7 @@ cmd_init() {
     network-infrastructure-pentest
     secure-code-review
     security-governance
+    specter-delta
     threat-modeling
     web-misconfig-review
   )

@@ -1,6 +1,6 @@
 {
   "name": "specter-kit",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "SPECTER — The Illusive Security Protocol. Modular security skills for autonomous IDE agents.",
   "author": "Anvin (Illusive Operations)",
   "license": "MIT",
@@ -38,10 +38,12 @@
     "scripts/cmd_runner.py",
     "scripts/deduplicate_findings.py",
     "scripts/export_findings.py",
+    "scripts/findings_index.py",
     "scripts/http_headers_check.py",
     "scripts/merge_reports.py",
     "scripts/normalize_finding.py",
     "scripts/port_probe.py",
+    "scripts/post_task_audit.py",
     "scripts/redact_evidence.py",
     "scripts/secret_grep.py",
     "scripts/severity_stats.py",
@@ -62,6 +64,7 @@
     "network-infrastructure-pentest/",
     "secure-code-review/",
     "security-governance/",
+    "specter-delta/",
     "threat-modeling/",
     "web-misconfig-review/"
   ],

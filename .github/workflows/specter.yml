@@ -94,7 +94,6 @@ jobs:
       - name: Secret scan on specter-kit source
         run: python3 scripts/secret_grep.py . --fail-on-found || true
 
----
 # ──────────────────────────────────────────────────────────────────────────────
 # USER PROJECT TEMPLATE
 # ──────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,110 @@
+name: Publish to npm
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Triggered automatically when a version tag is pushed:
+#
+#   git tag v1.2.0 && git push origin v1.2.0
+#
+# Required repository secrets (Settings → Secrets → Actions):
+#   NPM_TOKEN  — npm automation token (Granular token or Classic with publish scope)
+#
+# Flow:
+#   validate → publish (npm) + release (GitHub)
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: write  # create GitHub Release
+  id-token: write  # npm provenance attestation
+
+jobs:
+  # ── 1. Validate ─────────────────────────────────────────────────────────────
+  validate:
+    name: Validate — scripts, skills, schema
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python script syntax check
+        run: |
+          ok=0
+          for f in scripts/*.py; do
+            python3 -m py_compile "$f" && echo "  OK  $f" || ok=1
+          done
+          exit $ok
+
+      - name: SKILL.md frontmatter check
+        run: |
+          python3 - <<'EOF'
+          import sys
+          from pathlib import Path
+
+          skill_dirs = [
+            d for d in Path(".").iterdir()
+            if d.is_dir() and not d.name.startswith(".") and (d / "SKILL.md").exists()
+          ]
+          missing = [str(d / "SKILL.md") for d in skill_dirs
+                     if "name:" not in (d / "SKILL.md").read_text()]
+          if missing:
+              print("FAIL — missing 'name:' in:"); [print(f"  {f}") for f in missing]; sys.exit(1)
+          print(f"OK — {len(skill_dirs)} skill(s) validated")
+          EOF
+
+      - name: Tag / package.json version alignment
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "Tag: $TAG  |  package.json: $PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "ERROR: tag v$TAG does not match package.json version $PKG"
+            echo "Bump package.json before pushing the release tag."
+            exit 1
+          fi
+
+  # ── 2. Publish ──────────────────────────────────────────────────────────────
+  publish:
+    name: Publish — npm + GitHub Release
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm (with provenance)
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag  = context.ref.replace('refs/tags/', '');
+            const { data: release } = await github.rest.repos.createRelease({
+              owner:                 context.repo.owner,
+              repo:                  context.repo.repo,
+              tag_name:              tag,
+              name:                  `SPECTER ${tag}`,
+              generate_release_notes: true,
+              draft:                 false,
+              prerelease:            tag.includes('-'),
+            });
+            console.log(`Release created: ${release.html_url}`);

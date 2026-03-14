@@ -108,6 +108,9 @@ def run_tool(tool: str, tool_args: list, timeout: int) -> int:
         )
         sys.exit(2)
 
+    # Validate args before touching the filesystem
+    _check_args(tool_args)
+
     binary = shutil.which(tool)
     if binary is None:
         print(
@@ -116,8 +119,6 @@ def run_tool(tool: str, tool_args: list, timeout: int) -> int:
             file=sys.stderr,
         )
         sys.exit(3)
-
-    _check_args(tool_args)
 
     cmd = [binary] + tool_args
     print(f"\n[specter] Running: {' '.join(shlex.quote(c) for c in cmd)}\n", flush=True)

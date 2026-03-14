@@ -24,3 +24,17 @@ Specialized: exploit-validation, mobile-security-assessment, llm-and-ai-security
 Reporting & Audit: evidence-and-reporting, specter-delta
 
 All at `.specter/skills/<name>/SKILL.md`. Read the SKILL.md before starting.
+
+## Post-Task Security Gate
+
+After completing any coding or security task, run a fast delta audit:
+
+1. Check for `.specter/.audit-pending` (written by the Stop hook if configured)
+2. If present (or after any file modifications), invoke `.specter/skills/specter-delta/SKILL.md`
+3. **S1 Critical** — STOP. Fix immediately. Task is not complete.
+4. **S2 High** — Fix before closing, or get explicit user acceptance in writing.
+5. **S3–S5** — Log to `.specter/findings/` and surface as a warning. Task may close.
+6. Persist any findings via `python3 .specter/scripts/findings_index.py add '<json>'`
+7. Delete `.specter/.audit-pending` when done
+
+At the start of every new conversation, check `.specter/findings/index.json` for open S1/S2 findings and surface them before beginning new work.

@@ -9,6 +9,7 @@ Reads a markdown report file, extracts finding metadata from tables,
 and outputs summary statistics.
 """
 
+import argparse
 import re
 import sys
 from collections import Counter
@@ -30,45 +31,53 @@ CONFIDENCE_LABELS = {
 }
 
 
+FINDING_HEADER_RE = re.compile(
+    r"^###\s+\[?([A-Z][A-Z0-9]*-\d+[A-Z0-9]*|Finding)\]?\s*[:\-]\s*(.+)",
+    re.IGNORECASE,
+)
+
+
 def extract_findings(content):
     """Extract severity, confidence, and status from finding table rows."""
     findings = []
+    current_id = None
+    current_title = None
+    current_lines = []
 
-    # Match finding headers like "### F-001: Title"
-    finding_blocks = re.split(r"(?=^### F-\d+:)", content, flags=re.MULTILINE)
-
-    for block in finding_blocks:
-        header_match = re.match(r"^### (F-\d+): (.+)", block)
-        if not header_match:
-            continue
-
-        finding_id = header_match.group(1)
-        title = header_match.group(2).strip()
-
+    def flush_block():
+        if current_id is None:
+            return
+        block = "\n".join(current_lines)
         severity = None
         confidence = None
         status = None
-
         sev_match = re.search(r"\*\*Severity\*\*\s*\|\s*(S[1-5])", block)
         if sev_match:
             severity = sev_match.group(1)
-
         conf_match = re.search(r"\*\*Confidence\*\*\s*\|\s*(C[1-4])", block)
         if conf_match:
             confidence = conf_match.group(1)
-
         status_match = re.search(r"\*\*Status\*\*\s*\|\s*(\w[\w\s]*)", block)
         if status_match:
             status = status_match.group(1).strip()
-
         findings.append({
-            "id": finding_id,
-            "title": title,
+            "id": current_id,
+            "title": current_title,
             "severity": severity,
             "confidence": confidence,
             "status": status,
         })
 
+    for line in content.splitlines():
+        m = FINDING_HEADER_RE.match(line)
+        if m:
+            flush_block()
+            current_id = m.group(1).strip()
+            current_title = m.group(2).strip()
+            current_lines = [line]
+        elif current_id is not None:
+            current_lines.append(line)
+    flush_block()
     return findings
 
 
@@ -118,13 +127,15 @@ def print_stats(findings):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} <report.md>", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Parse a markdown report and generate severity/confidence statistics."
+    )
+    parser.add_argument("report", help="Path to markdown report file")
+    args = parser.parse_args()
 
-    report_path = sys.argv[1]
+    report_path = args.report
     try:
-        with open(report_path, "r") as f:
+        with open(report_path, "r", encoding="utf-8") as f:
             content = f.read()
     except FileNotFoundError:
         print(f"ERROR: File not found: {report_path}", file=sys.stderr)

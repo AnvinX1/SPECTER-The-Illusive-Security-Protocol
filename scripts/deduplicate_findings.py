@@ -12,42 +12,13 @@ Usage:
 """
 
 import argparse
-import re
+import os
 import sys
 from difflib import SequenceMatcher
 from pathlib import Path
 
-FINDING_HEADER_RE = re.compile(r"^###\s+Finding\s*[:\-]?\s*(.+)", re.IGNORECASE)
-FIELD_RE = re.compile(r"^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|")
-
-
-def parse_findings(text: str) -> list[dict]:
-    """Extract structured findings from markdown text."""
-    findings = []
-    current = None
-    current_lines = []
-
-    for line in text.splitlines():
-        match = FINDING_HEADER_RE.match(line)
-        if match:
-            if current is not None:
-                current["raw"] = "\n".join(current_lines)
-                findings.append(current)
-            current = {"title": match.group(1).strip(), "fields": {}}
-            current_lines = [line]
-        elif current is not None:
-            current_lines.append(line)
-            field_match = FIELD_RE.match(line)
-            if field_match:
-                key = field_match.group(1).strip().lower()
-                val = field_match.group(2).strip()
-                current["fields"][key] = val
-
-    if current is not None:
-        current["raw"] = "\n".join(current_lines)
-        findings.append(current)
-
-    return findings
+sys.path.insert(0, os.path.dirname(__file__))
+from specter_utils import parse_findings  # noqa: E402
 
 
 def similarity(a: str, b: str) -> float:

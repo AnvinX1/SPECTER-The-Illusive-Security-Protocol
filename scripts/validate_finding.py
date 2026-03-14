@@ -11,12 +11,18 @@ Usage:
 """
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
 
-FINDING_HEADER_RE = re.compile(r"^###\s+Finding\s*[:\-]?\s*(.+)", re.IGNORECASE)
-FIELD_RE = re.compile(r"^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|")
+sys.path.insert(0, os.path.dirname(__file__))
+from specter_utils import (  # noqa: E402
+    parse_findings,
+    VALID_SEVERITIES,
+    VALID_CONFIDENCES,
+    VALID_STATUSES,
+)
 
 REQUIRED_FIELDS = {
     "title",
@@ -31,40 +37,6 @@ REQUIRED_FIELDS = {
 }
 
 RECOMMENDED_FIELDS = {"evidence", "validation notes"}
-
-VALID_SEVERITIES = {"S1", "S2", "S3", "S4", "S5"}
-VALID_CONFIDENCES = {"C1", "C2", "C3", "C4"}
-VALID_STATUSES = {
-    "Suspected",
-    "Confirmed",
-    "Remediated",
-    "False Positive",
-    "Accepted Risk",
-}
-
-
-def parse_findings(text: str) -> list[dict]:
-    """Extract findings from markdown text."""
-    findings = []
-    current = None
-
-    for line in text.splitlines():
-        match = FINDING_HEADER_RE.match(line)
-        if match:
-            if current is not None:
-                findings.append(current)
-            current = {"title": match.group(1).strip(), "fields": {}}
-        elif current is not None:
-            field_match = FIELD_RE.match(line)
-            if field_match:
-                key = field_match.group(1).strip().lower()
-                val = field_match.group(2).strip()
-                current["fields"][key] = val
-
-    if current is not None:
-        findings.append(current)
-
-    return findings
 
 
 def validate_finding(finding: dict) -> list[str]:

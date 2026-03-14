@@ -21,9 +21,22 @@ const c = {
   yellow:  '\x1b[33m',
   cyan:    '\x1b[36m',
   magenta: '\x1b[35m',
+  bcyan:   '\x1b[96m',
+  white:   '\x1b[97m',
+  bgreen:  '\x1b[92m',
 };
 
-const SEP = '━'.repeat(62);
+const SEP      = '━'.repeat(62);
+const SEP_DIM  = '─'.repeat(62);
+const HIDE     = '\x1b[?25l';
+const SHOW     = '\x1b[?25h';
+const CLR      = '\x1b[2K';
+const SPINNER  = ['⣾','⣽','⣻','⢿','⡿','⣟','⣯','⣷'];
+const GLITCH_CHARS = '░▒▓█▄▀■□▪▫╬╫╪═║╡╢╖╗╘╙╔╦╠━┃┏┓┗┛';
+const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ░▒▓│┤╡╢╗╘╙╚╛╜╝╞╟╠═╬╧╨╤╥╫╪┘┐┌└┼';
+const LOGO_COLORS  = [c.cyan, c.bcyan, c.white + c.bold, c.bcyan, c.cyan, c.dim + c.cyan];
+const COUNTS       = { skills: 18, refs: 14, scripts: 15 };
+const P            = '  ';
 
 const BANNER = `
 ${c.dim}${SEP}${c.reset}
@@ -47,8 +60,6 @@ const LOGO_LINES = [
   '╚══════╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝',
 ];
 
-const GLITCH_CHARS = '░▒▓█▄▀■□▪▫╬╫╪═║╡╢╖╗╘╙╔╦╠━┃┏┓┗┛';
-
 // ── Package root (where npm installed us) ──────────────────────
 const PKG_ROOT = path.resolve(__dirname, '..');
 
@@ -69,6 +80,7 @@ const SKILL_DIRS = [
   'network-infrastructure-pentest',
   'secure-code-review',
   'security-governance',
+  'specter-delta',
   'threat-modeling',
   'web-misconfig-review',
 ];
@@ -94,6 +106,21 @@ const ADAPTERS = {
     name: 'Claude Code',
     src: 'adapters/claude.md',
     dest: 'CLAUDE.md',
+  },
+  zed: {
+    name: 'Zed Editor',
+    src: 'adapters/zed-rules.md',
+    dest: '.zed/specter.md',
+  },
+  continue: {
+    name: 'Continue.dev',
+    src: 'adapters/continue-rules.md',
+    dest: '.continue/specter.md',
+  },
+  cline: {
+    name: 'Cline',
+    src: 'adapters/cline-rules.md',
+    dest: '.clinerules',
   },
   generic: {
     name: 'Generic Agents',
@@ -132,8 +159,9 @@ const SKILL_META = {
     ['mobile-security-assessment', 'OWASP Mobile Top 10, Frida, Objection'],
     ['llm-and-ai-security',      'OWASP LLM Top 10, prompt injection, AI red teaming'],
   ],
-  'Reporting': [
+  'Reporting & Audit': [
     ['evidence-and-reporting',   'Report compilation, redaction, statistics'],
+    ['specter-delta',            'Fast-path post-task audit, findings store, CI gate'],
   ],
 };
 
@@ -209,6 +237,15 @@ function detectAgents(projectDir) {
   if (fs.existsSync(path.join(projectDir, '.windsurfrules'))) {
     detected.push('windsurf');
   }
+  if (fs.existsSync(path.join(projectDir, '.zed'))) {
+    detected.push('zed');
+  }
+  if (fs.existsSync(path.join(projectDir, '.continue'))) {
+    detected.push('continue');
+  }
+  if (fs.existsSync(path.join(projectDir, '.clinerules'))) {
+    detected.push('cline');
+  }
 
   // Default: copilot + generic if nothing else detected
   if (detected.length === 0) {
@@ -227,47 +264,162 @@ function detectAgents(projectDir) {
 
 async function animatedBanner() {
   const stdout = process.stdout;
-  const hide = '\x1b[?25l';
-  const show = '\x1b[?25h';
-  const clr = '\x1b[2K';
+  stdout.write(HIDE);
+  process.on('SIGINT', () => {
+    stdout.write(`${CLR}\r${SHOW}`);
+    process.exit(0);
+  });
 
-  stdout.write(hide);
-  process.on('SIGINT', () => { stdout.write(show); process.exit(0); });
+  const termW = stdout.columns || 80;
+  const barW  = Math.min(50, termW - 20);
+
+  const glitch = (line) =>
+    line.replace(/[^\s]/g, () => GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]);
+  const matrix = (width) =>
+    Array.from({ length: width }, () =>
+      MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]
+    ).join('');
+  const typewrite = async (text, color, delay) => {
+    for (const ch of text) {
+      stdout.write(`${color}${ch}${c.reset}`);
+      await sleep(delay + Math.random() * 8);
+    }
+  };
 
   try {
     stdout.write('\n');
 
-    // Phase 1: Scanning bar
-    const barW = 50;
-    const steps = 10;
-    for (let i = 0; i <= steps; i++) {
-      const filled = Math.round((i / steps) * barW);
-      const bar = '▓'.repeat(filled) + '░'.repeat(barW - filled);
-      const pct = String(Math.round((i / steps) * 100)).padStart(3);
-      stdout.write(`${clr}\r  ${c.cyan}${bar}${c.reset} ${c.dim}${pct}%${c.reset}`);
+    // ── Phase 0: Boot sequence ────────────────────────────────
+    const bootLines = [
+      `  SPECTER CORE v${VERSION}`,
+      '  LOADING SECURITY MODULES',
+      '  AGENT INTERFACE ONLINE',
+    ];
+    for (const line of bootLines) {
+      const padLen = Math.max(4, 38 - line.length);
+      stdout.write(`${c.dim}${c.cyan}`);
+      for (const ch of line) { stdout.write(ch); await sleep(8 + Math.random() * 5); }
+      stdout.write(`${c.reset}${c.dim}`);
+      for (let d = 0; d < padLen; d++) { stdout.write('.'); await sleep(12); }
+      stdout.write(`${c.reset}${c.bgreen}[OK]${c.reset}\n`);
+      await sleep(60);
+    }
+    await sleep(120);
+
+    // ── Phase 1: Matrix burst ─────────────────────────────────
+    const matW = Math.min(58, termW - 4);
+    stdout.write('\n\n\n');
+    for (let frame = 0; frame < 15; frame++) {
+      stdout.write('\x1b[3A');
+      for (let row = 0; row < 3; row++) {
+        if (frame < 14) {
+          stdout.write(`${CLR}\r${P}${c.dim}${c.cyan}${matrix(matW)}${c.reset}\n`);
+        } else {
+          stdout.write(`${CLR}\r\n`);
+        }
+      }
+      await sleep(12);
+    }
+    stdout.write('\x1b[3A');
+    await sleep(80);
+
+    // ── Phase 2: Tri-pulse scan bar ───────────────────────────
+    const pulses = [
+      { label: 'SCANNING ENVIRONMENT', color: c.dim + c.cyan  },
+      { label: 'LOADING THREAT DB',    color: c.cyan           },
+      { label: 'SECURITY ARMED',       color: c.bcyan          },
+    ];
+    for (const pulse of pulses) {
+      for (let i = 0; i <= barW; i += 2) {
+        const bar = '█'.repeat(i) + '▒'.repeat(Math.min(3, barW - i)) + '░'.repeat(Math.max(0, barW - i - 3));
+        const pct = String(Math.round((i / barW) * 100)).padStart(3);
+        stdout.write(`${CLR}\r${P}${pulse.color}${bar}${c.reset} ${c.dim}${pct}% ${pulse.label}${c.reset}`);
+        await sleep(18);
+      }
+      stdout.write(`${CLR}\r`);
+    }
+
+    // ── Phase 3: Logo with 3-pass glitch + gradient ───────────
+    stdout.write(`\n${P}${c.dim}${SEP}${c.reset}\n`);
+    for (let li = 0; li < LOGO_LINES.length; li++) {
+      const line = LOGO_LINES[li];
+      const passes = [
+        { col: c.dim + c.red,    ms: 18 },
+        { col: c.dim + c.yellow, ms: 12 },
+        { col: c.dim + c.bcyan,  ms:  8 },
+      ];
+      for (const { col, ms } of passes) {
+        stdout.write(`${CLR}\r${P} ${col}${glitch(line)}${c.reset}`);
+        await sleep(ms);
+      }
+      const lineColor = LOGO_COLORS[li] || c.cyan;
+      stdout.write(`${CLR}\r${P} ${lineColor}${line}${c.reset}\n`);
+      await sleep(12);
+    }
+    stdout.write(`${P}${c.dim}${SEP}${c.reset}\n\n`);
+    await sleep(60);
+
+    // ── Phase 4: Typewriter title + author ────────────────────
+    stdout.write(`${P}  `);
+    await typewrite('The Illusive Security Protocol', c.white + c.bold, 18);
+    stdout.write(`  ${c.dim}v${VERSION}${c.reset}\n`);
+    await sleep(30);
+    stdout.write(`${P}  `);
+    await typewrite('by Anvin · Illusive Operations', c.dim, 14);
+    stdout.write(`${c.reset}\n\n`);
+    await sleep(80);
+
+    // ── Phase 5: Count-up stats ───────────────────────────────
+    const numStats = [
+      { icon: '◆', color: c.cyan,  label: 'security skills', target: COUNTS.skills  },
+      { icon: '◆', color: c.cyan,  label: 'reference docs',  target: COUNTS.refs    },
+      { icon: '◆', color: c.cyan,  label: 'helper scripts',  target: COUNTS.scripts },
+    ];
+    const TICKS = 18, TICK_MS = 16;
+    for (const s of numStats) {
+      for (let tick = 0; tick <= TICKS; tick++) {
+        const cur    = Math.round((tick / TICKS) * s.target);
+        const done   = tick === TICKS;
+        const numStr = String(cur).padStart(2);
+        const suffix = done ? `  ${c.bgreen}✓${c.reset}` : '   ';
+        stdout.write(`${CLR}\r${P}  ${s.color}${s.icon}${c.reset}  ${numStr} ${c.dim}${s.label}${c.reset}${suffix}`);
+        if (!done) await sleep(TICK_MS);
+      }
+      stdout.write('\n');
       await sleep(30);
     }
-    await sleep(80);
-    stdout.write(`${clr}\r`);
-
-    // Phase 2: Logo with glitch reveal
-    console.log(`${c.dim}${SEP}${c.reset}`);
-    for (const line of LOGO_LINES) {
-      const glitched = line.replace(/[^\s]/g, () =>
-        GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]
-      );
-      stdout.write(`${clr}\r ${c.dim}${glitched}${c.reset}`);
-      await sleep(25);
-      stdout.write(`${clr}\r ${c.cyan}${c.bold}${line}${c.reset}\n`);
-    }
-    console.log(`${c.dim}${SEP}${c.reset}`);
-
+    stdout.write(`${P}  ${c.bgreen}★${c.reset}  ${c.dim}specter-delta  continuous post-task audit${c.reset}  ${c.bgreen}${c.bold}[ NEW ]${c.reset}\n\n`);
     await sleep(60);
-    console.log(`  ${c.bold}The Illusive Security Protocol${c.reset}  ${c.dim}v${VERSION}${c.reset}`);
-    console.log(`  ${c.dim}by Anvin · Illusive Operations${c.reset}`);
-    console.log('');
+
+    // ── Phase 6: Status panel ─────────────────────────────────
+    stdout.write(`${P}${c.dim}${SEP_DIM}${c.reset}\n`);
+    await sleep(25);
+    const rows = [
+      [`${c.bgreen}ACTIVE${c.reset}`, 'Security governance enforced'],
+      [`${c.bgreen}ACTIVE${c.reset}`, 'Post-task delta audit gate'],
+      [`${c.bcyan}READY${c.reset}`,   'Persistent findings store'],
+      [`${c.bcyan}READY${c.reset}`,   'CI/CD merge gate (see .github/workflows/)'],
+      [`${c.bcyan}READY${c.reset}`,   `${COUNTS.skills} skills · ${COUNTS.refs} references · ${COUNTS.scripts} scripts`],
+    ];
+    for (const [status, desc] of rows) {
+      stdout.write(`\r${P}  ${c.dim}[${c.reset} ${status} ${c.dim}]${c.reset}  ${c.dim}${desc}${c.reset}\n`);
+      await sleep(40);
+    }
+    stdout.write(`${P}${c.dim}${SEP_DIM}${c.reset}\n\n`);
+    await sleep(40);
+
+    // ── Phase 7: CTA with blinking cursor ─────────────────────
+    stdout.write(`${P}  ${c.dim}Run ${c.reset}${c.cyan}${c.bold}specter init${c.reset}${c.dim} to activate in your project.${c.reset} `);
+    for (let b = 0; b < 3; b++) {
+      stdout.write(`${c.cyan}▌${c.reset}`);
+      await sleep(200);
+      stdout.write('\b \b');
+      await sleep(200);
+    }
+    stdout.write('\n\n');
+
   } finally {
-    stdout.write(show);
+    stdout.write(SHOW);
   }
 }
 
@@ -286,12 +438,29 @@ async function cmdInit(flags) {
   let agentKeys;
   if (flags.agent === 'all') {
     agentKeys = Object.keys(ADAPTERS);
+  } else if (flags.agent === 'custom') {
+    // Custom agent: copy --src file to --dest path
+    if (!flags.src || !flags.dest) {
+      err('--agent custom requires --src <file> and --dest <path>');
+      info('Usage: specter init --agent custom --src ./my-adapter.md --dest ./.myagent/specter.md');
+      process.exit(1);
+    }
+    const srcFile  = path.resolve(flags.src);
+    const destFile = path.resolve(flags.dest);
+    if (!fs.existsSync(srcFile)) {
+      err(`Custom adapter source not found: ${flags.src}`);
+      process.exit(1);
+    }
+    fs.mkdirSync(path.dirname(destFile), { recursive: true });
+    fs.copyFileSync(srcFile, destFile);
+    ok(`Custom agent adapter installed: ${flags.dest}`);
+    agentKeys = [];
   } else if (flags.agent) {
     agentKeys = flags.agent.split(',').map(a => a.trim());
     for (const key of agentKeys) {
       if (!ADAPTERS[key]) {
         err(`Unknown agent: ${key}`);
-        info(`Available: ${Object.keys(ADAPTERS).join(', ')}, all`);
+        info(`Available: ${Object.keys(ADAPTERS).join(', ')}, all, custom`);
         process.exit(1);
       }
     }
@@ -370,6 +539,7 @@ async function cmdInit(flags) {
     initialized: new Date().toISOString().split('T')[0],
     agents: agentKeys,
     skills: SKILL_DIRS.length,
+    createdBy: 'Anvin (Illusive Operations)',
   };
   fs.writeFileSync(
     path.join(projectDir, '.specterrc'),
@@ -394,7 +564,20 @@ async function cmdInit(flags) {
   console.log(`  Run 'specter doctor' to verify installation.${c.reset}\n`);
 }
 
-function cmdList() {
+function cmdList(flags = {}) {
+  if (flags.agents) {
+    console.log(BANNER);
+    console.log(`  ${c.bold}Supported Agents:${c.reset}\n`);
+    for (const [key, adapter] of Object.entries(ADAPTERS)) {
+      const check = `${c.green}✓${c.reset}`;
+      const pad = ' '.repeat(Math.max(1, 12 - key.length));
+      console.log(`    ${check} ${c.cyan}${key}${c.reset}${pad}${c.dim}→ ${adapter.dest}${c.reset}`);
+    }
+    console.log(`      ${c.dim}custom      → --src <file> --dest <path>  (any agent)${c.reset}`);
+    console.log('');
+    return;
+  }
+
   console.log(BANNER);
   console.log(`  ${c.bold}Security Skills (${SKILL_DIRS.length}):${c.reset}\n`);
 
@@ -645,31 +828,213 @@ function cmdRun(runArgs) {
   process.exit(result.status ?? 0);
 }
 
+function cmdScan(scanArgs) {
+  const { spawnSync } = require('child_process');
+
+  const mode = scanArgs[0];
+
+  if (!mode || mode === '--help' || mode === '-h') {
+    console.log('');
+    console.log(`  ${c.bold}Usage:${c.reset} specter scan <mode> <target> [options]\n`);
+    console.log(`  ${c.bold}Modes:${c.reset}`);
+    console.log(`    ${c.cyan}web${c.reset}   <url>            Run TLS + HTTP headers checks`);
+    console.log(`    ${c.cyan}host${c.reset}  <hostname>       Run TLS + port probe`);
+    console.log(`    ${c.cyan}dir${c.reset}   [path]           Run secret scanner on directory`);
+    console.log(`    ${c.cyan}all${c.reset}   <url> [path]     Run all applicable checks`);
+    console.log('');
+    console.log(`  ${c.bold}Options:${c.reset}`);
+    console.log(`    --output <file>    Write combined markdown report to file`);
+    console.log('');
+    console.log(`  ${c.bold}Examples:${c.reset}`);
+    console.log(`    ${c.dim}$${c.reset} specter scan web https://example.com`);
+    console.log(`    ${c.dim}$${c.reset} specter scan host example.com`);
+    console.log(`    ${c.dim}$${c.reset} specter scan dir ./src`);
+    console.log(`    ${c.dim}$${c.reset} specter scan all https://example.com ./src --output report.md`);
+    console.log('');
+    return;
+  }
+
+  // Parse --output flag and collect positional args
+  let outputFile = null;
+  const positionalArgs = [];
+  for (let i = 1; i < scanArgs.length; i++) {
+    if (scanArgs[i] === '--output' && scanArgs[i + 1]) {
+      outputFile = scanArgs[++i];
+    } else if (!scanArgs[i].startsWith('--')) {
+      positionalArgs.push(scanArgs[i]);
+    }
+  }
+
+  // Resolve a Python script path (prefer installed .specter/scripts/ over pkg root)
+  const projectDir = process.cwd();
+  function scriptPath(name) {
+    const candidates = [
+      path.join(projectDir, SPECTER_DIR, 'scripts', name),
+      path.join(PKG_ROOT, 'scripts', name),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) return p;
+    }
+    return null;
+  }
+
+  // Normalise URL → ensure it has a scheme so URL() parses correctly
+  function normaliseUrl(raw) {
+    return raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+  }
+
+  // Build task list based on mode
+  let tasks = [];
+  switch (mode) {
+    case 'web': {
+      const rawUrl = positionalArgs[0];
+      if (!rawUrl) { err('specter scan web requires a <url>'); process.exit(1); }
+      const url = normaliseUrl(rawUrl);
+      let hostname = rawUrl;
+      try { hostname = new URL(url).hostname; } catch { /* keep rawUrl */ }
+      tasks = [
+        { label: 'TLS Check',      script: 'tls_check.py',          args: [hostname] },
+        { label: 'HTTP Headers',   script: 'http_headers_check.py',  args: [url] },
+      ];
+      break;
+    }
+    case 'host': {
+      const host = positionalArgs[0];
+      if (!host) { err('specter scan host requires a <hostname>'); process.exit(1); }
+      tasks = [
+        { label: 'TLS Check',  script: 'tls_check.py',  args: [host] },
+        { label: 'Port Probe', script: 'port_probe.py', args: [host, '--ports', 'top100'] },
+      ];
+      break;
+    }
+    case 'dir': {
+      const dir = positionalArgs[0] || '.';
+      tasks = [
+        { label: 'Secret Scan', script: 'secret_grep.py', args: [dir] },
+      ];
+      break;
+    }
+    case 'all': {
+      const rawUrl = positionalArgs[0];
+      if (!rawUrl) { err('specter scan all requires a <url>'); process.exit(1); }
+      const url = normaliseUrl(rawUrl);
+      let hostname = rawUrl;
+      try { hostname = new URL(url).hostname; } catch { /* keep rawUrl */ }
+      const dir = positionalArgs[1] || '.';
+      tasks = [
+        { label: 'TLS Check',    script: 'tls_check.py',          args: [hostname] },
+        { label: 'HTTP Headers', script: 'http_headers_check.py',  args: [url] },
+        { label: 'Port Probe',   script: 'port_probe.py',          args: [hostname, '--ports', 'top100'] },
+        { label: 'Secret Scan',  script: 'secret_grep.py',         args: [dir] },
+      ];
+      break;
+    }
+    default:
+      err(`Unknown scan mode: ${mode}`);
+      info('Valid modes: web, host, dir, all');
+      process.exit(1);
+  }
+
+  const python = process.platform === 'win32' ? 'python' : 'python3';
+  console.log(`\n${c.bold}SPECTER Scan${c.reset}  ${c.dim}mode=${mode}${c.reset}\n`);
+
+  const capuredOutputs = [];
+  let anyS1 = false;
+  let anyError = false;
+
+  for (const task of tasks) {
+    const sp = scriptPath(task.script);
+    if (!sp) {
+      warn(`Script not found, skipping: ${task.script}`);
+      continue;
+    }
+
+    console.log(`${c.cyan}▶ ${task.label}${c.reset}`);
+    const result = spawnSync(python, [sp, ...task.args], { encoding: 'utf8', shell: false });
+
+    if (result.error) {
+      err(`${task.label} failed to start: ${result.error.message}`);
+      anyError = true;
+      continue;
+    }
+
+    const stdout = result.stdout || '';
+    const stderr = result.stderr || '';
+    if (stderr.trim()) process.stderr.write(stderr);
+    if (stdout.trim()) {
+      process.stdout.write(stdout);
+      capuredOutputs.push(stdout);
+    }
+
+    // S1 exit code from scripts signals critical findings
+    if (result.status === 1 && /\|\s*S1\s*\|/.test(stdout)) anyS1 = true;
+    if (result.status !== 0) anyError = true;
+  }
+
+  // Write combined output to file
+  if (outputFile && capuredOutputs.length > 0) {
+    const targetDesc = positionalArgs.join(' ');
+    const date = new Date().toISOString().split('T')[0];
+    const combined =
+      `# SPECTER Scan Report\n\n` +
+      `**Mode:** ${mode}  \n**Target:** \`${targetDesc}\`  \n**Date:** ${date}\n\n` +
+      capuredOutputs.join('\n\n---\n\n');
+    try {
+      fs.writeFileSync(outputFile, combined, 'utf8');
+      ok(`Report → ${outputFile}`);
+    } catch (e) {
+      err(`Could not write report: ${e.message}`);
+    }
+  }
+
+  console.log('');
+  if (anyS1) {
+    console.log(`${c.red}${c.bold}  ⚠  Critical (S1) findings detected.${c.reset}\n`);
+    process.exit(1);
+  } else if (anyError) {
+    process.exit(1);
+  }
+}
+
 function cmdHelp() {
   console.log(BANNER);
   console.log(`  ${c.bold}Usage:${c.reset} specter <command> [options]\n`);
   console.log(`  ${c.bold}Commands:${c.reset}`);
-  console.log(`    ${c.cyan}init${c.reset}       Initialize SPECTER in current project`);    console.log(`    ${c.cyan}run${c.reset}        Run an active security check or tool`);  console.log(`    ${c.cyan}list${c.reset}       List available security skills`);
+  console.log(`    ${c.cyan}init${c.reset}       Initialize SPECTER in current project`);
+  console.log(`    ${c.cyan}scan${c.reset}       Multi-check scan (TLS, headers, ports, secrets)`);
+  console.log(`    ${c.cyan}run${c.reset}        Run a single security check or tool`);
+  console.log(`    ${c.cyan}list${c.reset}       List available security skills`);
   console.log(`    ${c.cyan}doctor${c.reset}     Verify installation health`);
   console.log(`    ${c.cyan}update${c.reset}     Update skills to latest version`);
   console.log(`    ${c.cyan}banner${c.reset}     Replay the animated banner`);
   console.log(`    ${c.cyan}help${c.reset}       Show this help message`);
   console.log('');
   console.log(`  ${c.bold}Init Options:${c.reset}`);
-  console.log(`    --agent <name>   Platform: copilot, cursor, windsurf, claude, generic, all`);
+  console.log(`    --agent <name>   Platform: copilot, cursor, windsurf, claude, zed, continue, cline, generic, all`);
+  console.log(`                     OR: custom --src <file> --dest <path>  (any agent)`);
   console.log(`    --force          Overwrite existing adapter files`);
+  console.log('');
+  console.log(`  ${c.bold}List Options:${c.reset}`);
+  console.log(`    --agents         Show all supported agent platforms`);
   console.log('');
   console.log(`  ${c.bold}Examples:${c.reset}`);
   console.log(`    ${c.dim}$${c.reset} specter init`);
   console.log(`    ${c.dim}$${c.reset} specter init --agent all`);
-  console.log(`    ${c.dim}$${c.reset} specter init --agent copilot,cursor`);
-  console.log(`    ${c.dim}$${c.reset} specter init --agent cursor --force`);    console.log(`    ${c.dim}$${c.reset} specter run http-headers https://example.com`);
-    console.log(`    ${c.dim}$${c.reset} specter run tls example.com`);
-    console.log(`    ${c.dim}$${c.reset} specter run ports 10.0.0.1 --ports top1000`);
-    console.log(`    ${c.dim}$${c.reset} specter run secrets ./src`);
-    console.log(`    ${c.dim}$${c.reset} specter run tool nmap -sV -p 80,443 example.com`);  console.log(`    ${c.dim}$${c.reset} specter doctor`);
+  console.log(`    ${c.dim}$${c.reset} specter init --agent zed`);
+  console.log(`    ${c.dim}$${c.reset} specter init --agent cline`);
+  console.log(`    ${c.dim}$${c.reset} specter init --agent custom --src ./my-adapter.md --dest ./.myagent/specter.md`);
+  console.log(`    ${c.dim}$${c.reset} specter list --agents`);
+  console.log(`    ${c.dim}$${c.reset} specter scan web https://example.com`);
+  console.log(`    ${c.dim}$${c.reset} specter scan host example.com --output report.md`);
+  console.log(`    ${c.dim}$${c.reset} specter scan dir ./src`);
+  console.log(`    ${c.dim}$${c.reset} specter scan all https://example.com ./src`);
+  console.log(`    ${c.dim}$${c.reset} specter run http-headers https://example.com`);
+  console.log(`    ${c.dim}$${c.reset} specter run tls example.com`);
+  console.log(`    ${c.dim}$${c.reset} specter run ports 10.0.0.1 --ports top1000`);
+  console.log(`    ${c.dim}$${c.reset} specter run secrets ./src`);
+  console.log(`    ${c.dim}$${c.reset} specter run tool nmap -sV -p 80,443 example.com`);
+  console.log(`    ${c.dim}$${c.reset} specter doctor`);
   console.log(`    ${c.dim}$${c.reset} specter update`);
-  console.log(`    ${c.dim}$${c.reset} specter banner`);
   console.log('');
 }
 
@@ -690,8 +1055,9 @@ async function main() {
 
   switch (cmd) {
     case 'init':     await cmdInit(flags);                  break;
+    case 'scan':     cmdScan(process.argv.slice(3));         break;
     case 'run':      cmdRun(process.argv.slice(3));          break;
-    case 'list':     cmdList();                              break;
+    case 'list':     cmdList(flags);                              break;
     case 'doctor':   cmdDoctor();            break;
     case 'update':   cmdUpdate();            break;
     case 'banner':   await cmdBanner();      break;

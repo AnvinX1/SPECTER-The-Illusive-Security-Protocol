@@ -15,13 +15,12 @@ import argparse
 import csv
 import io
 import json
-import re
+import os
 import sys
 from pathlib import Path
 
-FINDING_HEADER_RE = re.compile(r"^###\s+Finding\s*[:\-]?\s*(.+)", re.IGNORECASE)
-FIELD_RE = re.compile(r"^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|")
-
+sys.path.insert(0, os.path.dirname(__file__))
+from specter_utils import parse_findings  # noqa: E402
 STANDARD_FIELDS = [
     "title",
     "severity",
@@ -37,28 +36,14 @@ STANDARD_FIELDS = [
 ]
 
 
-def parse_findings(text: str) -> list[dict]:
-    """Extract structured findings from markdown."""
-    findings = []
-    current = None
-
-    for line in text.splitlines():
-        match = FINDING_HEADER_RE.match(line)
-        if match:
-            if current is not None:
-                findings.append(current)
-            current = {"title": match.group(1).strip()}
-        elif current is not None:
-            field_match = FIELD_RE.match(line)
-            if field_match:
-                key = field_match.group(1).strip().lower()
-                val = field_match.group(2).strip()
-                current[key] = val
-
-    if current is not None:
-        findings.append(current)
-
-    return findings
+def _flatten(findings: list[dict]) -> list[dict]:
+    """Flatten specter_utils findings (with nested fields) to flat export dicts."""
+    flat = []
+    for f in findings:
+        record = {"id": f.get("id", ""), "title": f.get("title", "")}
+        record.update(f.get("fields", {}))
+        flat.append(record)
+    return flat
 
 
 def filter_by_severity(findings: list[dict], severities: set[str]) -> list[dict]:
@@ -122,7 +107,7 @@ def main():
         sys.exit(1)
 
     text = report_path.read_text(encoding="utf-8")
-    findings = parse_findings(text)
+    findings = _flatten(parse_findings(text))
 
     if not findings:
         print("No findings found in report.", file=sys.stderr)

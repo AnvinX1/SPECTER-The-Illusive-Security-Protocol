@@ -36,7 +36,24 @@ from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-INDEX = Path(__file__).parent.parent / "findings" / "index.json"
+
+def _resolve_index_path() -> Path:
+    """Find .specter/findings/index.json by walking up from CWD.
+
+    Walks the directory tree from the current working directory upward,
+    looking for the first ancestor that contains a .specter/ directory.
+    Falls back to __file__-relative path for development/testing use.
+    """
+    cwd = Path.cwd()
+    for candidate in [cwd, *cwd.parents]:
+        specter_dir = candidate / ".specter"
+        if specter_dir.is_dir():
+            return specter_dir / "findings" / "index.json"
+    # Fallback: __file__-relative (dev use, e.g., running from inside the package)
+    return Path(__file__).parent.parent / "findings" / "index.json"
+
+
+INDEX = _resolve_index_path()
 
 VALID_SEVERITIES = {"S1", "S2", "S3", "S4", "S5"}
 VALID_STATUSES   = {"Confirmed", "Suspected", "Remediated", "Accepted Risk", "False Positive"}
@@ -73,7 +90,9 @@ def cmd_init(_args, _data=None) -> int:
     if INDEX.exists():
         print(f"Index already exists at {INDEX}")
         return 0
-    save(_empty_index())
+    empty = _empty_index()
+    INDEX.parent.mkdir(parents=True, exist_ok=True)
+    INDEX.write_text(json.dumps(empty, indent=2))
     print(f"Initialized findings index at {INDEX}")
     return 0
 
@@ -164,11 +183,16 @@ def cmd_update(args, data: dict) -> int:
 
 def cmd_list(args, data: dict) -> int:
     """List findings, optionally filtered by severity or status."""
-    entries = list(data["open"])
-    if hasattr(args, "status") and args.status in ("remediated",):
-        entries = list(data["remediated"])
+    status_filter = getattr(args, "status", None)
+    status_to_list = {
+        "open":            data["open"],
+        "remediated":      data["remediated"],
+        "accepted_risk":   data["accepted_risk"],
+        "false_positives": data["false_positives"],
+    }
+    entries = list(status_to_list.get(status_filter, data["open"]))
 
-    if hasattr(args, "severity") and args.severity:
+    if args.severity:
         entries = [e for e in entries if e.get("severity") == args.severity]
 
     if not entries:
@@ -228,7 +252,10 @@ def main() -> int:
 
     p_list = subparsers.add_parser("list", help="List findings")
     p_list.add_argument("--severity", choices=sorted(VALID_SEVERITIES))
-    p_list.add_argument("--status", choices=["open", "remediated"])
+    p_list.add_argument(
+        "--status",
+        choices=["open", "remediated", "accepted_risk", "false_positives"],
+    )
 
     args = parser.parse_args()
 

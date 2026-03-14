@@ -11,61 +11,18 @@ Usage:
 """
 
 import argparse
-import re
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-FINDING_HEADER_RE = re.compile(r"^###\s+Finding\s*[:\-]?\s*(.+)", re.IGNORECASE)
-FIELD_RE = re.compile(r"^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|")
-SEVERITY_ORDER = {"S1": 0, "S2": 1, "S3": 2, "S4": 3, "S5": 4}
-
-
-def parse_findings(text: str, source: str) -> list[dict]:
-    """Extract findings from a markdown report, tagging with source."""
-    findings = []
-    current = None
-    current_lines = []
-
-    for line in text.splitlines():
-        match = FINDING_HEADER_RE.match(line)
-        if match:
-            if current is not None:
-                current["raw"] = "\n".join(current_lines)
-                findings.append(current)
-            current = {
-                "title": match.group(1).strip(),
-                "fields": {},
-                "source": source,
-            }
-            current_lines = [line]
-        elif current is not None:
-            current_lines.append(line)
-            field_match = FIELD_RE.match(line)
-            if field_match:
-                key = field_match.group(1).strip().lower()
-                val = field_match.group(2).strip()
-                current["fields"][key] = val
-
-    if current is not None:
-        current["raw"] = "\n".join(current_lines)
-        findings.append(current)
-
-    return findings
-
-
-def severity_key(finding: dict) -> int:
-    """Sort key: lower severity number = higher priority."""
-    sev = finding["fields"].get("severity", "S5")
-    for prefix, order in SEVERITY_ORDER.items():
-        if sev.upper().startswith(prefix):
-            return order
-    return 5
+sys.path.insert(0, os.path.dirname(__file__))
+from specter_utils import parse_findings, SEVERITY_ORDER, severity_sort_key  # noqa: E402
 
 
 def merge_and_sort(all_findings: list[dict]) -> list[dict]:
     """Sort findings by severity (S1 first)."""
-    return sorted(all_findings, key=severity_key)
+    return sorted(all_findings, key=severity_sort_key)
 
 
 def build_merged_report(

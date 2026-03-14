@@ -3,10 +3,12 @@ data/
 
 # Python
 scripts/__pycache__/
+tests/__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+.pytest_cache/
 
 # Node
 node_modules/

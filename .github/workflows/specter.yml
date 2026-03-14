@@ -19,6 +19,7 @@ on:
   pull_request:
     paths:
       - 'scripts/**'
+      - 'tests/**'
       - 'specter-delta/**'
       - '**/*.md'
       - 'package.json'
@@ -44,6 +45,11 @@ jobs:
           for f in scripts/*.py; do
             python3 -m py_compile "$f" && echo "  OK  $f" || exit 1
           done
+
+      - name: Run pytest
+        run: |
+          pip install pytest --quiet
+          python -m pytest tests/ -v --tb=short
 
       - name: Validate findings_index.py — init and stats
         run: |

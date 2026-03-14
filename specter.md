@@ -152,6 +152,9 @@ All skills enforce these — see `skills/security-governance/SKILL.md` for full 
 | `references/ssrf-exploitation-guide.md` | SSRF payloads and bypasses |
 | `references/cloud-cis-benchmarks-summary.md` | AWS/Azure/GCP CIS checks |
 | `references/tool-recommendations.md` | Categorized tool reference |
+| `references/llm-owasp-top-10.md` | OWASP LLM Top 10 checklists |
+| `references/mitre-attack-mapping.md` | SPECTER skill → ATT&CK technique mapping |
+| `references/attack-chains-and-pivoting.md` | Multi-step attack chains, pivot techniques, compound severity |
 
 ## Scripts
 
@@ -171,6 +174,7 @@ All skills enforce these — see `skills/security-governance/SKILL.md` for full 
 | `scripts/cmd_runner.py` | **Active** — run allowlisted security tools (nmap, nikto…) safely |
 | `scripts/post_task_audit.py` | **Hook** — run after every task (Stop hook); writes `.audit-pending` |
 | `scripts/findings_index.py` | **Findings** — manage `.specter/findings/index.json` (add/update/list/stats) |
+| `scripts/specter_utils.py` | **Library** — shared `parse_findings()`, `FINDING_HEADER_RE`, constants (imported by other scripts) |
 
 ### Running Active Checks
 

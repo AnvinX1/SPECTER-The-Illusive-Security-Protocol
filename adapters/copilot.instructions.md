@@ -11,7 +11,7 @@ Before performing any security assessment, penetration testing, code review, or 
 3. **Use standard output format**: All findings must use the format from `.specter/references/report-template.md` with severity ratings from `.specter/references/severity-matrix.md`.
 4. **Route through triage**: Send findings through `.specter/skills/bug-bounty-triage/SKILL.md` for deduplication and prioritization.
 
-## Installed Skills (17)
+## Installed Skills (18)
 
 - **Governance**: security-governance, bug-bounty-triage
 - **Recon**: indepth-recon-analysis, threat-modeling
@@ -19,7 +19,7 @@ Before performing any security assessment, penetration testing, code review, or 
 - **Infrastructure**: cloud-config-audit, container-and-runtime-security, network-infrastructure-pentest
 - **Supply Chain**: dependency-and-secret-audit, ci-cd-supply-chain-security, active-directory-and-identity-audit
 - **Specialized**: exploit-validation, mobile-security-assessment, llm-and-ai-security
-- **Reporting**: evidence-and-reporting
+- **Reporting & Audit**: evidence-and-reporting, specter-delta
 
 All skill files are at `.specter/skills/<name>/SKILL.md`. Read the relevant SKILL.md before starting work.
 

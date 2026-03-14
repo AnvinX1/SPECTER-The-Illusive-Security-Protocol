@@ -59,8 +59,8 @@ REDACTION_RULES = [
     # AWS Secret Access Key (40 char base64)
     (
         "AWS Secret",
-        re.compile(r"(?<=aws_secret_access_key\s{0,5}=\s{0,5})[A-Za-z0-9/+=]{40}"),
-        "[REDACTED_AWS_SECRET]",
+        re.compile(r"(aws_secret_access_key\s{0,5}=\s{0,5})[A-Za-z0-9/+=]{40}", re.IGNORECASE),
+        r"\1[REDACTED_AWS_SECRET]",
     ),
     # Generic API keys / tokens (long hex or base64 strings in key= context)
     (
@@ -121,10 +121,7 @@ def redact_text(text: str, dry_run: bool = False) -> tuple[str, list[dict]]:
         if matches:
             log.append({"rule": name, "count": len(matches)})
             if not dry_run:
-                if callable(replacement):
-                    result = pattern.sub(replacement, result)
-                else:
-                    result = pattern.sub(replacement, result)
+                result = pattern.sub(replacement, result)
 
     return result, log
 

@@ -137,7 +137,8 @@ def run_checks(hostname: str, port: int) -> list:
         if not_after:
             try:
                 expiry = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
-                days_left = (expiry - datetime.datetime.utcnow()).days
+                expiry_aware = expiry.replace(tzinfo=datetime.timezone.utc)
+                days_left = (expiry_aware - datetime.datetime.now(datetime.timezone.utc)).days
                 print(f"**Certificate Expiry:** `{not_after}` ({days_left} days remaining)  ")
                 if days_left < 0:
                     findings.append({

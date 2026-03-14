@@ -93,7 +93,13 @@ LEAKY_HEADERS = [
 ]
 
 
-def fetch_headers(url: str) -> tuple:
+class NoFollowRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Redirect handler that suppresses all redirects."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None  # Returning None prevents redirect following
+
+
+def fetch_headers(url: str, follow_redirects: bool = True) -> tuple:
     """Return (headers_lower_dict, status_code, final_url). Exits on connection error."""
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
@@ -103,7 +109,12 @@ def fetch_headers(url: str) -> tuple:
         headers={"User-Agent": "SPECTER-Security-Scanner/1.0"},
     )
     try:
-        with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+        if follow_redirects:
+            response_cm = urllib.request.urlopen(req, context=ctx, timeout=15)
+        else:
+            opener = urllib.request.build_opener(NoFollowRedirectHandler())
+            response_cm = opener.open(req, timeout=15)
+        with response_cm as resp:
             headers = {k.lower(): v for k, v in resp.getheaders()}
             return headers, resp.status, resp.url
     except urllib.error.HTTPError as e:
@@ -114,11 +125,11 @@ def fetch_headers(url: str) -> tuple:
         sys.exit(1)
 
 
-def run_checks(url: str) -> list:
+def run_checks(url: str, follow_redirects: bool = True) -> list:
     parsed = urllib.parse.urlparse(url)
     is_https = parsed.scheme == "https"
 
-    headers, status, final_url = fetch_headers(url)
+    headers, status, final_url = fetch_headers(url, follow_redirects=follow_redirects)
     findings = []
 
     print(f"\n## HTTP Security Header Check\n")
@@ -208,7 +219,7 @@ def main():
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
-    findings = run_checks(url)
+    findings = run_checks(url, follow_redirects=not args.no_follow)
     print_findings(findings)
 
     if any(f["severity"] in ("S1", "S2") for f in findings):

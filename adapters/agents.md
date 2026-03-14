@@ -21,7 +21,7 @@ For any security-related task (assessment, pentest, code review, vulnerability a
 5. **Severity ratings**: Apply `.specter/references/severity-matrix.md` (S1-S5 severity, C1-C4 confidence).
 6. **Triage**: Route through `.specter/skills/bug-bounty-triage/SKILL.md`.
 
-## Skills (17)
+## Skills (18)
 
 | Category | Skills |
 |----------|--------|
@@ -31,7 +31,7 @@ For any security-related task (assessment, pentest, code review, vulnerability a
 | Infrastructure | cloud-config-audit, container-and-runtime-security, network-infrastructure-pentest |
 | Supply Chain | dependency-and-secret-audit, ci-cd-supply-chain-security, active-directory-and-identity-audit |
 | Specialized | exploit-validation, mobile-security-assessment, llm-and-ai-security |
-| Reporting | evidence-and-reporting |
+| Reporting & Audit | evidence-and-reporting, specter-delta |
 
 ## Non-Negotiable Rules
 

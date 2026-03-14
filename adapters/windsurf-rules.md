@@ -18,6 +18,6 @@ For any security assessment, pentest, code review, vulnerability analysis, or bu
 - Redact PII and credentials in all output
 - Follow skill workflows exactly as defined
 
-17 skills installed covering: governance, recon, threat modeling, code review, API security, AI/LLM security, web config, cloud, containers, network, supply chain, CI/CD, identity/AD, exploit validation, mobile, and reporting.
+18 skills installed covering: governance, recon, threat modeling, code review, API security, AI/LLM security, web config, cloud, containers, network, supply chain, CI/CD, identity/AD, exploit validation, mobile, reporting, and continuous delta audit.
 
 Full details: `.specter/specter.md`

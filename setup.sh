@@ -6,7 +6,7 @@
 # ══════════════════════════════════════════════════════════════════
 set -euo pipefail
 
-VERSION="1.2.0"
+VERSION="1.4.0"
 SPECTER_REPO="https://github.com/anvin/specter-kit.git"
 SPECTER_DIR=".specter"
 
@@ -89,6 +89,7 @@ cmd_init() {
     evidence-and-reporting
     exploit-validation
     indepth-recon-analysis
+    llm-and-ai-security
     mobile-security-assessment
     network-infrastructure-pentest
     secure-code-review

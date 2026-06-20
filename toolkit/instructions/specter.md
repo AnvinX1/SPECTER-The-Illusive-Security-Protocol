@@ -1,9 +1,11 @@
-# SPECTER — The Illusive Security Protocol
+# SPECTER Toolkit — The Illusive Security Protocol
 
 > **S**ecurity **P**rotocol for **E**xploitation, **C**omprehensive **T**esting, **E**valuation & **R**eporting
-> by Anvin · Illusive Operations
+> by Araskova Labs
 
-Full skill reference and workflow guide. This document is the source of truth for all SPECTER operations.
+Full skill reference and workflow guide. This document is the source of truth for Specter Toolkit operations.
+
+Cerberus is the Rust-native Araskova Labs upgrade path for agentic security operations built on top of this toolkit.
 
 ---
 

@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-# Ensure scripts/ is importable
-SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+# Ensure toolkit scripts are importable
+SCRIPTS_DIR = Path(__file__).parent.parent / "toolkit" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"

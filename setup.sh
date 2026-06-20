@@ -47,9 +47,10 @@ cmd_init() {
   # Determine source: if we're running from inside the specter-kit repo
   local src_dir
   src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local toolkit_dir="${src_dir}/toolkit"
 
   # Check if source has skill files
-  if [[ ! -d "${src_dir}/security-governance" ]]; then
+  if [[ ! -d "${toolkit_dir}/skills/security-governance" ]]; then
     # Try cloning from git
     if command -v git &>/dev/null; then
       info "Downloading SPECTER from repository..."
@@ -61,6 +62,7 @@ cmd_init() {
         exit 1
       }
       src_dir="${tmp_dir}"
+      toolkit_dir="${src_dir}/toolkit"
     else
       fail "Cannot find SPECTER source files and git is not available"
       fail "Install via npm: npm install -g specter-kit && specter init"
@@ -100,44 +102,44 @@ cmd_init() {
   )
 
   for skill in "${skill_dirs[@]}"; do
-    if [[ -d "${src_dir}/${skill}" ]]; then
-      cp -r "${src_dir}/${skill}" "${specter_dest}/skills/"
+    if [[ -d "${toolkit_dir}/skills/${skill}" ]]; then
+      cp -r "${toolkit_dir}/skills/${skill}" "${specter_dest}/skills/"
       ((skill_count++))
     fi
   done
   ok "Installed ${skill_count} security skills"
 
   # Copy references
-  if [[ -d "${src_dir}/references" ]]; then
-    cp -r "${src_dir}/references/"* "${specter_dest}/references/" 2>/dev/null || true
+  if [[ -d "${toolkit_dir}/references" ]]; then
+    cp -r "${toolkit_dir}/references/"* "${specter_dest}/references/" 2>/dev/null || true
     local ref_count
     ref_count=$(find "${specter_dest}/references" -name "*.md" | wc -l)
     ok "Installed ${ref_count} reference documents"
   fi
 
   # Copy scripts
-  if [[ -d "${src_dir}/scripts" ]]; then
-    cp -r "${src_dir}/scripts/"* "${specter_dest}/scripts/" 2>/dev/null || true
+  if [[ -d "${toolkit_dir}/scripts" ]]; then
+    cp -r "${toolkit_dir}/scripts/"* "${specter_dest}/scripts/" 2>/dev/null || true
     local script_count
     script_count=$(find "${specter_dest}/scripts" -name "*.py" | wc -l)
     ok "Installed ${script_count} helper scripts"
   fi
 
   # Copy master instructions
-  if [[ -f "${src_dir}/specter.md" ]]; then
-    cp "${src_dir}/specter.md" "${specter_dest}/specter.md"
+  if [[ -f "${toolkit_dir}/instructions/specter.md" ]]; then
+    cp "${toolkit_dir}/instructions/specter.md" "${specter_dest}/specter.md"
     ok "Created master instructions"
   fi
 
-  if [[ -f "${src_dir}/specter.instructions.md" ]]; then
-    cp "${src_dir}/specter.instructions.md" "${specter_dest}/specter.instructions.md"
+  if [[ -f "${toolkit_dir}/instructions/specter.instructions.md" ]]; then
+    cp "${toolkit_dir}/instructions/specter.instructions.md" "${specter_dest}/specter.instructions.md"
     ok "Created auto-load instructions"
   fi
 
   echo ""
 
   # Install agent adapters
-  install_adapters "${src_dir}" "${project_dir}" "${agent}"
+  install_adapters "${toolkit_dir}" "${project_dir}" "${agent}"
 
   # Create .specterrc
   cat > "${project_dir}/.specterrc" <<EOF

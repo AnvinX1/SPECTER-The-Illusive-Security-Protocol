@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "toolkit" / "scripts"))
 from specter_utils import (
     CONFIDENCE_LABELS,
     FINDING_HEADER_RE,

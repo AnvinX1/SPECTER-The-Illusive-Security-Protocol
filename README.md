@@ -13,7 +13,7 @@
 
 **S**ecurity **P**rotocol for **E**xploitation, **C**omprehensive **T**esting, **E**valuation & **R**eporting
 
-<em>Modular security skill system for autonomous IDE agents.</em>
+<em>Open-source security skill system for autonomous IDE agents.</em>
 
 <br>
 
@@ -25,7 +25,20 @@
 
 ---
 
-SPECTER is a zero-dependency skill framework that transforms any LLM-powered coding agent into a governed security operator. One command installs 18 security skills, 22 enforceable guardrails, and a structured assessment workflow into any project — with support for 8 agent platforms (5 auto-detected, 1 custom).
+SPECTER Toolkit is the open-source skill framework that transforms any LLM-powered coding agent into a governed security operator. One command installs 18 security skills, 22 enforceable guardrails, and a structured assessment workflow into any project — with support for 8 agent platforms (5 auto-detected, 1 custom).
+
+Cerberus is the Araskova Labs upgrade path: a Rust-native agentic security framework built from Specter Toolkit's skills, scanners, governance, and reporting model.
+
+<br>
+
+## Product Line
+
+| Product | Availability | Purpose |
+|---------|--------------|---------|
+| **Specter Toolkit** | Open source | Skills, references, adapters, lightweight scanners, and report helpers |
+| **Cerberus** | Araskova Labs upgrade | Terminal agent runtime, policy engine, memory, controlled tool execution, findings database, daemon/API/MCP surfaces |
+
+See [`docs/cerberus-architecture.md`](docs/cerberus-architecture.md) and [`docs/rust-migration-plan.md`](docs/rust-migration-plan.md) for the Rust migration path.
 
 <br>
 
@@ -143,6 +156,40 @@ specter update     # update to latest skills
 specter banner     # replay the terminal animation
 ```
 
+Rust preview scaffold:
+
+```bash
+cargo run -p specter-cli -- doctor
+cargo run -p specter-cli -- list
+cargo run -p specter-cli -- cerberus
+cargo run -p specter-cli -- console
+cargo run -p specter-cli -- policy check --risk passive
+cargo run -p specter-cli -- llm status
+```
+
+Cerberus is terminal-only for the agent interface. The Rust console is the
+primary surface for project analysis, governed tool use, exploit validation,
+fixes, and verification.
+
+LLM activation examples:
+
+```bash
+# Claude / Anthropic
+$env:CERBERUS_LLM_PROVIDER="anthropic"
+$env:ANTHROPIC_API_KEY="..."
+cargo run -p specter-cli -- console --provider anthropic
+
+# OpenAI Responses API
+$env:CERBERUS_LLM_PROVIDER="openai"
+$env:OPENAI_API_KEY="..."
+cargo run -p specter-cli -- llm ask "Identify the first security audit step."
+
+# Local OpenAI-compatible server
+$env:CERBERUS_LLM_PROVIDER="openai-compatible"
+$env:CERBERUS_LLM_BASE_URL="http://127.0.0.1:1234"
+cargo run -p specter-cli -- console --provider openai-compatible --model local-model
+```
+
 <br>
 
 ## Guardrails
@@ -165,7 +212,7 @@ All assessments operate under 22 mandatory rules enforced by the governance skil
 
 <br>
 
-<strong>SPECTER</strong> · by Anvin · Illusive Operations
+<strong>SPECTER Toolkit</strong> · by Araskova Labs
 
 MIT License
 

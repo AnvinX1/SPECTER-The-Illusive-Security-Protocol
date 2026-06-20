@@ -1,0 +1,26 @@
+[workspace]
+members = [
+  "crates/specter-cli",
+  "crates/specter-core",
+  "crates/specter-policy",
+  "crates/specter-findings",
+  "crates/specter-skills",
+  "crates/specter-tools",
+  "crates/specter-llm",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/AnvinX1/SPECTER-The-Illusive-Security-Protocol"
+authors = ["Araskova Labs"]
+
+[workspace.dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+time = { version = "0.3", features = ["formatting", "parsing", "serde"] }
+tokio = { version = "1.52", features = ["macros", "rt-multi-thread"] }

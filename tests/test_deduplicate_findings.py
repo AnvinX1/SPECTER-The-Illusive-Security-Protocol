@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "toolkit" / "scripts"
 
 
 def run_dedup(report_path, threshold=None, output=None):

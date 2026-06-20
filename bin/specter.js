@@ -10,6 +10,7 @@ const path = require('path');
 
 const VERSION = require(path.resolve(__dirname, '..', 'package.json')).version;
 const SPECTER_DIR = '.specter';
+const TOOLKIT_DIR = 'toolkit';
 
 // ── ANSI Colors (zero dependencies) ────────────────────────────
 const c = {
@@ -62,6 +63,12 @@ const LOGO_LINES = [
 
 // ── Package root (where npm installed us) ──────────────────────
 const PKG_ROOT = path.resolve(__dirname, '..');
+const TOOLKIT_ROOT = path.join(PKG_ROOT, TOOLKIT_DIR);
+const SKILLS_ROOT = path.join(TOOLKIT_ROOT, 'skills');
+const ADAPTERS_ROOT = path.join(TOOLKIT_ROOT, 'adapters');
+const REFERENCES_ROOT = path.join(TOOLKIT_ROOT, 'references');
+const SCRIPTS_ROOT = path.join(TOOLKIT_ROOT, 'scripts');
+const INSTRUCTIONS_ROOT = path.join(TOOLKIT_ROOT, 'instructions');
 
 // ── Skill directories ──────────────────────────────────────────
 const SKILL_DIRS = [
@@ -89,42 +96,42 @@ const SKILL_DIRS = [
 const ADAPTERS = {
   copilot: {
     name: 'GitHub Copilot',
-    src: 'adapters/copilot.instructions.md',
+    src: 'copilot.instructions.md',
     dest: '.github/copilot-instructions.md',
   },
   cursor: {
     name: 'Cursor',
-    src: 'adapters/cursor-rules.md',
+    src: 'cursor-rules.md',
     dest: '.cursor/rules/specter.md',
   },
   windsurf: {
     name: 'Windsurf',
-    src: 'adapters/windsurf-rules.md',
+    src: 'windsurf-rules.md',
     dest: '.windsurfrules',
   },
   claude: {
     name: 'Claude Code',
-    src: 'adapters/claude.md',
+    src: 'claude.md',
     dest: 'CLAUDE.md',
   },
   zed: {
     name: 'Zed Editor',
-    src: 'adapters/zed-rules.md',
+    src: 'zed-rules.md',
     dest: '.zed/specter.md',
   },
   continue: {
     name: 'Continue.dev',
-    src: 'adapters/continue-rules.md',
+    src: 'continue-rules.md',
     dest: '.continue/specter.md',
   },
   cline: {
     name: 'Cline',
-    src: 'adapters/cline-rules.md',
+    src: 'cline-rules.md',
     dest: '.clinerules',
   },
   generic: {
     name: 'Generic Agents',
-    src: 'adapters/agents.md',
+    src: 'agents.md',
     dest: 'AGENTS.md',
   },
 };
@@ -477,7 +484,7 @@ async function cmdInit(flags) {
   const skillsDest = path.join(specterDir, 'skills');
   let skillCount = 0;
   for (const dir of SKILL_DIRS) {
-    const src = path.join(PKG_ROOT, dir);
+    const src = path.join(SKILLS_ROOT, dir);
     if (fs.existsSync(src)) {
       copyRecursiveSync(src, path.join(skillsDest, dir));
       skillCount++;
@@ -487,21 +494,21 @@ async function cmdInit(flags) {
 
   // ── 3. Copy references ─────────────────────────────────────
   const refsCount = copyRecursiveSync(
-    path.join(PKG_ROOT, 'references'),
+    REFERENCES_ROOT,
     path.join(specterDir, 'references')
   );
   ok(`Installed ${c.bold}${refsCount}${c.reset} reference documents`);
 
   // ── 4. Copy scripts ────────────────────────────────────────
   const scriptsCount = copyRecursiveSync(
-    path.join(PKG_ROOT, 'scripts'),
+    SCRIPTS_ROOT,
     path.join(specterDir, 'scripts')
   );
   ok(`Installed ${c.bold}${scriptsCount}${c.reset} helper scripts`);
 
   // ── 5. Copy master instructions ────────────────────────────
   for (const docFile of ['specter.md', 'specter.instructions.md']) {
-    const src = path.join(PKG_ROOT, docFile);
+    const src = path.join(INSTRUCTIONS_ROOT, docFile);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, path.join(specterDir, docFile));
     }
@@ -515,7 +522,7 @@ async function cmdInit(flags) {
     const adapter = ADAPTERS[key];
     if (!adapter) continue;
 
-    const srcFile = path.join(PKG_ROOT, adapter.src);
+    const srcFile = path.join(ADAPTERS_ROOT, adapter.src);
     const destFile = path.join(projectDir, adapter.dest);
 
     if (!fs.existsSync(srcFile)) {
@@ -584,7 +591,7 @@ function cmdList(flags = {}) {
   for (const [category, skills] of Object.entries(SKILL_META)) {
     console.log(`  ${c.cyan}${c.bold}${category}${c.reset}`);
     for (const [name, desc] of skills) {
-      const exists = fs.existsSync(path.join(PKG_ROOT, name, 'SKILL.md'));
+      const exists = fs.existsSync(path.join(SKILLS_ROOT, name, 'SKILL.md'));
       const mark = exists ? `${c.green}✓${c.reset}` : `${c.red}✗${c.reset}`;
       const pad = ' '.repeat(Math.max(1, 42 - name.length));
       console.log(`    ${mark} ${name}${pad}${c.dim}${desc}${c.reset}`);
@@ -592,8 +599,8 @@ function cmdList(flags = {}) {
     console.log('');
   }
 
-  console.log(`  ${c.dim}References: ${countFiles(path.join(PKG_ROOT, 'references'), '.md')}`);
-  console.log(`  Scripts:    ${countFiles(path.join(PKG_ROOT, 'scripts'), '.py')}${c.reset}\n`);
+  console.log(`  ${c.dim}References: ${countFiles(REFERENCES_ROOT, '.md')}`);
+  console.log(`  Scripts:    ${countFiles(SCRIPTS_ROOT, '.py')}${c.reset}\n`);
 }
 
 function cmdDoctor() {
@@ -714,7 +721,7 @@ function cmdUpdate() {
   const skillsDest = path.join(specterDir, 'skills');
   let updated = 0;
   for (const dir of SKILL_DIRS) {
-    const src = path.join(PKG_ROOT, dir);
+    const src = path.join(SKILLS_ROOT, dir);
     if (fs.existsSync(src)) {
       copyRecursiveSync(src, path.join(skillsDest, dir));
       updated++;
@@ -724,21 +731,21 @@ function cmdUpdate() {
 
   // Re-copy references
   copyRecursiveSync(
-    path.join(PKG_ROOT, 'references'),
+    REFERENCES_ROOT,
     path.join(specterDir, 'references')
   );
   ok('Updated references');
 
   // Re-copy scripts
   copyRecursiveSync(
-    path.join(PKG_ROOT, 'scripts'),
+    SCRIPTS_ROOT,
     path.join(specterDir, 'scripts')
   );
   ok('Updated scripts');
 
   // Re-copy master instructions
   for (const docFile of ['specter.md', 'specter.instructions.md']) {
-    const src = path.join(PKG_ROOT, docFile);
+    const src = path.join(INSTRUCTIONS_ROOT, docFile);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, path.join(specterDir, docFile));
     }
@@ -799,7 +806,7 @@ function cmdRun(runArgs) {
   // Resolve script: prefer installed .specter/scripts/ over package root
   const projectDir = process.cwd();
   const installedScript = path.join(projectDir, SPECTER_DIR, 'scripts', scriptName);
-  const pkgScript = path.join(PKG_ROOT, 'scripts', scriptName);
+  const pkgScript = path.join(SCRIPTS_ROOT, scriptName);
   const scriptPath = fs.existsSync(installedScript) ? installedScript : pkgScript;
 
   if (!fs.existsSync(scriptPath)) {
@@ -870,7 +877,7 @@ function cmdScan(scanArgs) {
   function scriptPath(name) {
     const candidates = [
       path.join(projectDir, SPECTER_DIR, 'scripts', name),
-      path.join(PKG_ROOT, 'scripts', name),
+      path.join(SCRIPTS_ROOT, name),
     ];
     for (const p of candidates) {
       if (fs.existsSync(p)) return p;

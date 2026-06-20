@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "toolkit" / "scripts"
 
 # ── Import the module under test ───────────────────────────────────────────────
 sys.path.insert(0, str(SCRIPTS_DIR))

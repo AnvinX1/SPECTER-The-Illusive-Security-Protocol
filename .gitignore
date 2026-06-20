@@ -13,6 +13,10 @@ tests/__pycache__/
 # Node
 node_modules/
 npm-debug.log*
+dist/
 
 # SPECTER project config (written by specter init in consuming projects)
 .specterrc
+
+# Rust / Tauri
+target/

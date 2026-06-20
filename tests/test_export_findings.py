@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "toolkit" / "scripts"
 
 
 def run_export(report_path, fmt="json", severity=None, output=None):

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPTS_DIR = Path(__file__).parent.parent / "toolkit" / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 
 
 def run_severity_stats(report_path):

@@ -1,8 +1,4 @@
-# Contributing to Specter Toolkit
-
-Specter Toolkit is the open-source layer. Cerberus is the Araskova Labs
-Rust-native agentic upgrade path; keep toolkit contributions reusable and avoid
-placing private Cerberus-only behavior in public skills or scripts.
+# Contributing to SPECTER
 
 ## Three-File Sync Rule (CRITICAL)
 
